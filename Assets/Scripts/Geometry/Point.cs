@@ -13,4 +13,20 @@ public class Point : MonoBehaviour
     {
         this.position = new Vector3(x, y, z);
     }
+
+    public float GetX()
+    {
+        return position.x;
+    }
+    
+    public float GetY()
+    {
+        return position.y;
+    }
+    
+    public float GetZ()
+    {
+        return position.z;
+    }
+    
 }

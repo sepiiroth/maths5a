@@ -36,6 +36,7 @@ public class ClickOnPlan : MonoBehaviour
                 GameObject temp = (GameObject) Instantiate(prefabTemporaire, newV, Quaternion.Euler(0, 0, 0) );
                 temp.tag = "Point";
                 temp.layer = LayerMask.NameToLayer("Points");
+                ProjectManager.Instance().AddPointToList(temp);
             }
             
         }
