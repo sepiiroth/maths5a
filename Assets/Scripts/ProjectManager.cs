@@ -31,18 +31,19 @@ public class ProjectManager : MonoBehaviour
         {
             List<GameObject> temp = getConvexEnvelopJarvis();
 
-            LineRenderer lR = linePrefab.GetComponent<LineRenderer>();
+            var newLine = Instantiate(linePrefab, Vector3.zero, Quaternion.Euler(0, 0, 0));
+            LineRenderer lR = newLine.GetComponent<LineRenderer>();
             lR.positionCount = temp.Count;
+            int index = 0;
             foreach (var x in temp)
             {
-                for (int i = 0; i < temp.Count; i++)
-                {
-                    lR.SetPosition(i, x.transform.position);
-                }
+               
+                lR.SetPosition(index, x.transform.position + new Vector3(0,0,-0.1f)) ;
                 Debug.Log(x.transform.position);
+                index++;
             }
 
-            Instantiate(linePrefab, Vector3.zero, Quaternion.Euler(0, 0, 0));
+            
             //Debug.Log(temp[0].transform.position);
 
             //Debug.Log(GetAngle(pointsList[0].transform.position,pointsList[1].transform.position,pointsList[2].transform.position ));
@@ -105,14 +106,15 @@ public class ProjectManager : MonoBehaviour
 
     GameObject GetMinAngle(Vector3 currentPoint, Vector3 lastPoint)
     {
-        var minAngle = GetAngle(pointsList[0].transform.position, currentPoint, lastPoint);
-        var minPoint = pointsList[0];
-
-        for (int i = 1; i < pointsList.Count; i++)
+        var minAngle = 361f;
+        GameObject minPoint = null;
+        Debug.Log($"{currentPoint}");
+        for (int i = 0; i < pointsList.Count; i++)
         {
-            if (pointsList[i].transform.position != currentPoint)
+            if (pointsList[i].transform.position != currentPoint && pointsList[i].transform.position != lastPoint)
             {
                 var angleI = GetAngle(pointsList[i].transform.position, currentPoint, lastPoint);
+                Debug.Log($"{pointsList[i].transform.position}, {currentPoint}, {lastPoint} = {angleI}");
                 if (angleI < minAngle)
                 {
                     minAngle = angleI;
@@ -133,15 +135,28 @@ public class ProjectManager : MonoBehaviour
         float uNorm = Mathf.Sqrt(Mathf.Pow(u.x, 2) + Mathf.Pow(u.y, 2));
         float vNorm = Mathf.Sqrt(Mathf.Pow(v.x, 2) + Mathf.Pow(v.y, 2));
 
+        
         if(uNorm == 0 | vNorm == 0)
         {
             return 0;
         }
 
         float dotUV = (u.x * v.x) + (u.y * v.y);
+        
+        var angle = Mathf.Acos(dotUV/(uNorm * vNorm)) * 180 / Mathf.PI;
 
-        return Mathf.Acos(dotUV/(uNorm * vNorm)) * 180 / Mathf.PI;
-        return Vector3.Angle(u, v);
+        var perp = Vector3.Cross(v, u);
+        
+        //Test pour connaitre le sens de l'angle
+        var temp = -v.x * u.y + v.y * u.x;
+        
+        if (temp < 0)
+        {
+            angle = 360 - angle;
+        }
+
+        return angle;
+        //return Vector3.Angle(u, v);
     }
 }
 
