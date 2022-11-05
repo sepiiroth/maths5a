@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class ProjectManager : MonoBehaviour
@@ -27,9 +28,10 @@ public class ProjectManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //Envelope Convex
         if (Input.GetKeyDown(KeyCode.A))
         {
-            List<GameObject> temp = getConvexEnvelopJarvis();
+            List<GameObject> temp = getConvexEnvelopJarvis(pointsList);
 
             var newLine = Instantiate(linePrefab, Vector3.zero, Quaternion.Euler(0, 0, 0));
             LineRenderer lR = newLine.GetComponent<LineRenderer>();
@@ -42,11 +44,12 @@ public class ProjectManager : MonoBehaviour
                 Debug.Log(x.transform.position);
                 index++;
             }
-
-            
-            //Debug.Log(temp[0].transform.position);
-
-            //Debug.Log(GetAngle(pointsList[0].transform.position,pointsList[1].transform.position,pointsList[2].transform.position ));
+        }
+        
+        //Triangulation
+        if (Input.GetKeyDown(KeyCode.Z))
+        {
+            IncrementalTriangulation();
         }
     }
 
@@ -54,29 +57,31 @@ public class ProjectManager : MonoBehaviour
     {
         pointsList.Add(point);
     }
+    
+    /*********** Enveloppe Convex *************/
 
-    public List<GameObject> getConvexEnvelopJarvis()
+    public List<GameObject> getConvexEnvelopJarvis(List<GameObject> points)
     {
         List<GameObject> result = new List<GameObject>();
-
-        var pointMin = pointsList[0];
+        
+        var pointMin = points[0];
         var xMin = pointMin.transform.position.x;
 
         
         //Recherche du point le plus à gauche
-        for (int i = 1; i < pointsList.Count; i++)
+        for (int i = 1; i < points.Count; i++)
         {
-            var xCurrent = pointsList[i].transform.position.x;
+            var xCurrent = points[i].transform.position.x;
             if (xCurrent < xMin)
             {
-                pointMin = pointsList[i];
+                pointMin = points[i];
                 xMin = xCurrent;
             }
             if (Math.Abs(xCurrent - xMin) < 0.00001f)
             {
-                if (pointsList[i].transform.position.y < pointMin.transform.position.y)
+                if (points[i].transform.position.y < pointMin.transform.position.y)
                 {
-                    pointMin = pointsList[i];
+                    pointMin = points[i];
                     xMin = xCurrent;
                 }
             }
@@ -95,30 +100,27 @@ public class ProjectManager : MonoBehaviour
                 lastPoint = result[result.Count-2].transform.position;
             }
 
-            var minAngle = GetMinAngle(currentPoint.transform.position,lastPoint );
+            var minAngle = GetMinAngle(currentPoint.transform.position,lastPoint , points);
             result.Add(minAngle);
             currentPoint = minAngle;
         } while (currentPoint != result[0]);
         
-        
         return result;
     }
 
-    GameObject GetMinAngle(Vector3 currentPoint, Vector3 lastPoint)
+    GameObject GetMinAngle(Vector3 currentPoint, Vector3 lastPoint, List<GameObject> points)
     {
         var minAngle = 361f;
         GameObject minPoint = null;
-        Debug.Log($"{currentPoint}");
-        for (int i = 0; i < pointsList.Count; i++)
+        for (int i = 0; i < points.Count; i++)
         {
-            if (pointsList[i].transform.position != currentPoint && pointsList[i].transform.position != lastPoint)
+            if (points[i].transform.position != currentPoint && points[i].transform.position != lastPoint)
             {
-                var angleI = GetAngle(pointsList[i].transform.position, currentPoint, lastPoint);
-                Debug.Log($"{pointsList[i].transform.position}, {currentPoint}, {lastPoint} = {angleI}");
+                var angleI = GetAngle(points[i].transform.position, currentPoint, lastPoint);
                 if (angleI < minAngle)
                 {
                     minAngle = angleI;
-                    minPoint = pointsList[i];
+                    minPoint = points[i];
                 }
             }
         }
@@ -158,6 +160,72 @@ public class ProjectManager : MonoBehaviour
         return angle;
         //return Vector3.Angle(u, v);
     }
+    
+    /************************/
+    
+    /************ Trinagulation Incrémentale *************/
+    void IncrementalTriangulation()
+    {
+        List<GameObject> pointSorted = pointsList.OrderBy(x => x.transform.position.x).ToList();
+        List<GameObject> envelop = new List<GameObject>();
+        List<GameObject> polygon = new List<GameObject>();
+
+        var tempList = pointSorted.GetRange(0, 3).OrderBy(x => x.transform.position.y).ToList();
+
+        CreateLine(tempList[0].transform.position, tempList[1].transform.position);
+        CreateLine(tempList[1].transform.position, tempList[2].transform.position);
+
+        for (int i = 0; i < 3; i++)
+        {
+            CreateLine(tempList[i].transform.position, pointSorted[3].transform.position);
+        }
+        
+        polygon.Add(pointSorted[0]);
+        polygon.Add(pointSorted[1]);
+        polygon.Add(pointSorted[2]);
+        polygon.Add(pointSorted[3]);
+        pointSorted.RemoveAt(0);
+        pointSorted.RemoveAt(0);
+        pointSorted.RemoveAt(0);
+        pointSorted.RemoveAt(0);
+        
+        envelop = getConvexEnvelopJarvis(polygon);
+
+        while (pointSorted.Count > 0)
+        {
+            envelop = getConvexEnvelopJarvis(polygon);
+            for (int i = 0; i < envelop.Count; i++)
+            {
+                var left = isLeft(envelop[i].transform.position, envelop[(i+1) % envelop.Count].transform.position,
+                    pointSorted[0].transform.position);
+                if (left)
+                {
+                    CreateLine(envelop[i].transform.position, pointSorted[0].transform.position);
+                    CreateLine(envelop[(i+1)%envelop.Count].transform.position, pointSorted[0].transform.position);
+                }
+            }
+            polygon.Add(pointSorted[0]);
+            pointSorted.RemoveAt(0);
+        }
+    }
+
+    void CreateLine(Vector3 positionA, Vector3 positionB)
+    {
+        var lineTemp = Instantiate(linePrefab, Vector3.zero, Quaternion.Euler(0, 0, 0));
+        LineRenderer lrTemp = lineTemp.GetComponent<LineRenderer>();
+        lrTemp.positionCount = 2;
+        lrTemp.SetPosition(0, positionA);
+        lrTemp.SetPosition(1, positionB);
+    }
+    
+    
+    //a = Point de la ligne
+    //b = Point de la ligne
+    //c = Point à tester
+    public bool isLeft(Vector3 a, Vector3 b, Vector3 c){
+        return ((b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)) > 0;
+    }
+    
 }
 
 
