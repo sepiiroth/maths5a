@@ -308,6 +308,7 @@ public class ProjectManager : MonoBehaviour
 
             Vector3 S3 = pointTA[0];
             Vector3 S4 = pointTB[0];
+            
 
             List<Arete> areteT1 = T1.GetAllArete();
             areteT1.Remove(a);
@@ -321,8 +322,6 @@ public class ProjectManager : MonoBehaviour
 
             if (!CheckDelaunayCriteria(a, S3, S4))
             {
-                //Debug.Log($"{a.GetPointA()} - {a.GetPointB()}");
-                
                 a.SetPointA(S3);
                 a.SetPointB(S4);
 
@@ -345,7 +344,8 @@ public class ProjectManager : MonoBehaviour
 
     public bool CheckDelaunayCriteria(Arete a, Vector3 DA, Vector3 DB)
     {
-        List<Vector3> pointsT1 = new List<Vector3>(){a.GetPointA(), a.GetPointB(), DA}.OrderBy(x => x.x).ToList();
+        //Autre methode mais ne fonctionne pas
+        /*List<Vector3> pointsT1 = new List<Vector3>(){a.GetPointA(), a.GetPointB(), DA}.OrderBy(x => x.x).ToList();
         List<Vector3> pointsT2 = new List<Vector3>(){a.GetPointA(), a.GetPointB(), DB}.OrderBy(x => x.x).ToList();
 
         var leftA = pointsT1[0];
@@ -357,7 +357,15 @@ public class ProjectManager : MonoBehaviour
         var rightB = pointsT2[1].y < pointsT2[2].y ? pointsT2[2] : pointsT2[1];
         
         //Debug.Log($"TA = {MatDet(leftA, middleA, rightA, DB)} - TB = {MatDet(leftB, middleB, rightB, DA)}");
-        return MatDet(leftA, middleA, rightA, DB) > 0 & MatDet(leftB, middleB, rightB, DA) > 0;
+        return MatDet(leftA, middleA, rightA, DB) > 0 & MatDet(leftB, middleB, rightB, DA) > 0;*/
+
+        float angleT1 = GetAngle(a.GetPointA(),DA, a.GetPointB());
+        float angleT2 = GetAngle(a.GetPointA(),DB, a.GetPointB());
+
+        angleT1 = angleT1 > 180 ? 360 - angleT1 : angleT1;
+        angleT2 = angleT2 > 180 ? 360 - angleT2 : angleT2;
+
+        return angleT1 + angleT2 <= 180;
     }
 
     public float MatDet(Vector3 A, Vector3 B, Vector3 C, Vector3 D)
