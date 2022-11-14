@@ -20,6 +20,17 @@ public class ProjectManager : MonoBehaviour
     [SerializeField]
     private GameObject linePrefab;
 
+    [SerializeField]
+    private GameObject linePrefabVoronoi;
+
+    [SerializeField]
+    private GameObject barycentrePrefab;
+
+    [SerializeField]
+    private GameObject centerCircle;
+
+    GameObject point0;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -49,6 +60,26 @@ public class ProjectManager : MonoBehaviour
                 index++;
             }
         }
+
+        if(Input.GetKeyDown(KeyCode.G)) {
+            List<GameObject> temp = getConvexEnvelopGrahamScan(pointsList);
+
+            var newLine = Instantiate(linePrefab, Vector3.zero, Quaternion.Euler(0, 0, 0));
+            LineRenderer lR = newLine.GetComponent<LineRenderer>();
+            lR.positionCount = temp.Count;
+            int index = 0;
+            foreach (var x in temp)
+            {
+               
+                lR.SetPosition(index, x.transform.position + new Vector3(0,0,-0.1f)) ;
+                Debug.Log(x.transform.position);
+                index++;
+            }
+        }
+
+        if(Input.GetKeyDown(KeyCode.V)) {
+            Voronoi(T, A);
+        }
         
         //Triangulation
         if (Input.GetKeyDown(KeyCode.Z))
@@ -66,13 +97,109 @@ public class ProjectManager : MonoBehaviour
     {
         pointsList.Add(point);
     }
+
+    public void Voronoi(List<Triangle> triangle, List<Arete> arete) {
+        List<Point> centreCircleList = new List<Point>();
+        List<Arete> areteStar = new List<Arete>();
+        for(int i = 0; i < triangle.Count; i++) { //Determiner le centre CT du cercle cicronscrit au triangle T
+            List<Vector3> sommets = triangle[i].GetSommet();
+    
+            Point milieu = new Point((sommets[0][0] + sommets[1][0])/2, (sommets[0][1] + sommets[1][1])/2, 0);
+            //var middle = Instantiate(barycentrePrefab, milieu.position, Quaternion.Euler(0, 0, 0));
+            //float coeffDir1 = (sommets[1][1] - sommets[0][1])/(sommets[1][0] - sommets[0][0]);
+            float a = -((sommets[1][0] - sommets[0][0])/(sommets[1][1] - sommets[0][1]));
+            var b = - (a * milieu.GetX()) + milieu.GetY();
+
+            Point milieu2 = new Point((sommets[1][0] + sommets[2][0])/2, (sommets[1][1] + sommets[2][1])/2, 0);
+            //middle = Instantiate(barycentrePrefab, milieu2.position, Quaternion.Euler(0, 0, 0));
+            //float coeffDir2 = (sommets[2][1] - sommets[1][1])/(sommets[2][0] - sommets[1][0]);
+            float ap = -((sommets[2][0] - sommets[1][0])/(sommets[2][1] - sommets[1][1]));
+            var bp = milieu2.GetY() - (ap * milieu2.GetX());
+
+            var x = (bp - b)/(a - ap);
+            var y  = (a * x) + b;
+            Point centreCircleP = new Point(x, y, 0);
+            centreCircleList.Add(centreCircleP);
+            var center = Instantiate(centerCircle, centreCircleP.position, Quaternion.Euler(0, 0, 0));
+            triangle[i].centreCirconscrit = centreCircleP;
+        }
+
+        for(int i = 0; i < arete.Count; i++) {
+            int much = 0;
+            List<int> tata = new List<int>();
+            for(int j = 0; j < triangle.Count; j++) {
+                if(triangle[j].GetAllArete().Contains(arete[i])) {
+                    much++;
+                    tata.Add(j);
+                                        
+                }
+            }
+            if(much > 1) { //interne
+                Debug.Log("interne");
+                Arete ar = new Arete(triangle[tata[0]].centreCirconscrit.position, triangle[tata[1]].centreCirconscrit.position);
+                Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointB());
+                areteStar.Add(ar);
+
+                // deux centres cercles circonscrits
+            } else if(much != 0) { //externe
+                Debug.Log(tata.Count + " " + much + " " + triangle.Count);
+                Debug.Log(triangle[tata[0]].centreCirconscrit.position);
+                Point milieu = new Point((arete[i].GetPointA()[0] + arete[i].GetPointB()[0])/2, (arete[i].GetPointA()[1] + arete[i].GetPointB()[1])/2, 0);
+                Arete ar = new Arete(triangle[tata[0]].centreCirconscrit.position, milieu.position);
+                Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointB());
+                areteStar.Add(ar);
+                // centre cercle circonscrit et milieu de l'arete 
+            }
+        }
+    }
     
     /*********** Enveloppe Convex *************/
+
+    public void GrahamScan(ref List<GameObject> pts, ref List<GameObject> selPts) {
+        if(pts.Count > 0 ) { // Point dans la liste ?
+            var pt = pts[0]; // current point position
+
+            if(selPts.Count <= 1) {
+                selPts.Add(pt); // On ajoute le premier pts car le point le plus proche du referentiel fera toujours partie de l'enveloppe convexe
+                pts.RemoveAt(0); // On retire le point sur l'autre liste
+            } else {
+                var pt1 = selPts[selPts.Count - 1];//previous point position, last point
+                var pt2 = selPts[selPts.Count - 2]; // second last point
+                Vector3 dir1 = pt1.transform.position - pt2.transform.position; //vec2 to vec1
+                Vector3 dir2 = pt.transform.position - pt1.transform.position;//last selected point to current point position
+                var cross = Vector3.Cross(dir1, dir2);// cross product
+                if(cross[2] < 0) { // si z negatif right turn sinon left turn 
+                    selPts.RemoveAt(selPts.Count - 1);
+                } else {
+                    selPts.Add(pt); //add current point to the selpoints
+                    pts.RemoveAt(0); // remove from the current point the first one
+                }
+            }
+        }
+    }
+
+    public List<GameObject> getConvexEnvelopGrahamScan(List<GameObject> points) {
+        List<GameObject> result = points;
+
+        result = result.OrderBy(pt => pt.transform.position.y).ToList(); // Liste triee du y min vers le y max
+        result = result.OrderBy(pt => Math.Atan2(pt.transform.position.y - result[0].transform.position.y, pt.transform.position.x - result[0].transform.position.x)).ToList(); // Tri en fonction de l'angle de chaque point par rapport au referentiel (ici, point le plus bas) 
+        
+        List<GameObject> selPts = new List<GameObject>();
+
+
+        while(result.Count > 0) {
+            GrahamScan(ref result, ref selPts);
+        };
+
+        selPts.Add(selPts[0]);
+        
+        return selPts;
+    }
 
     public List<GameObject> getConvexEnvelopJarvis(List<GameObject> points)
     {
         List<GameObject> result = new List<GameObject>();
-        
+    
         var pointMin = points[0];
         var xMin = pointMin.transform.position.x;
 
@@ -169,7 +296,6 @@ public class ProjectManager : MonoBehaviour
         return angle;
         //return Vector3.Angle(u, v);
     }
-    
     /************************/
     
     /************ Trinagulation Incrémentale *************/
@@ -248,6 +374,29 @@ public class ProjectManager : MonoBehaviour
         if (!A.Exists(x => x.Equals(temp)))
         {
             var lineTemp = Instantiate(linePrefab, Vector3.zero, Quaternion.Euler(0, 0, 0));
+            LineRenderer lrTemp = lineTemp.GetComponent<LineRenderer>();
+            lrTemp.positionCount = 2;
+            lrTemp.SetPosition(0, positionA);
+            lrTemp.SetPosition(1, positionB);
+        
+        
+            temp.SetLineRenderer(lrTemp);
+            A.Add(temp);
+        }
+        else
+        {
+            temp = A.Find(x => x.Equals(temp));
+        }
+        
+        return temp;
+    }
+
+    Arete CreateLineVoronoi(Vector3 positionA, Vector3 positionB)
+    {
+        Arete temp = new Arete(positionA, positionB);
+        if (!A.Exists(x => x.Equals(temp)))
+        {
+            var lineTemp = Instantiate(linePrefabVoronoi, Vector3.zero, Quaternion.Euler(0, 0, 0));
             LineRenderer lrTemp = lineTemp.GetComponent<LineRenderer>();
             lrTemp.positionCount = 2;
             lrTemp.SetPosition(0, positionA);

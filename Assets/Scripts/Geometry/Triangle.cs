@@ -5,6 +5,7 @@ using UnityEngine;
 public class Triangle
 {
     private Arete arete1, arete2, arete3;
+    public Point centreCirconscrit; 
 
     public Triangle(Arete A1, Arete A2, Arete A3)
     {

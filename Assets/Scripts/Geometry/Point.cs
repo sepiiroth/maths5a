@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Point : MonoBehaviour
 {
-    private Vector3 position;
+    public Vector3 position;
     
     [SerializeField]
     private GameObject prefab;
@@ -12,6 +12,10 @@ public class Point : MonoBehaviour
     public Point(float x, float y, float z)
     {
         this.position = new Vector3(x, y, z);
+    }
+
+    public Point() {
+        this.position = new Vector3(0, 0, 0);
     }
 
     public float GetX()
