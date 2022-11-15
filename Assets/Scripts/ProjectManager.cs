@@ -83,7 +83,7 @@ public class ProjectManager : MonoBehaviour
         }
 
         if(Input.GetKeyDown(KeyCode.V)) {
-            Voronoi(T, A);
+            Voronoi(T, A, pointsList);
         }
         
         //Triangulation
@@ -118,7 +118,7 @@ public class ProjectManager : MonoBehaviour
         Flipping();
     }
 
-    public void Voronoi(List<Triangle> triangle, List<Arete> arete) {
+    public void Voronoi(List<Triangle> triangle, List<Arete> arete, List<GameObject> point) {
         List<Point> centreCircleList = new List<Point>();
         List<Arete> areteStar = new List<Arete>();
         for(int i = 0; i < triangle.Count; i++) { //Determiner le centre CT du cercle cicronscrit au triangle T
@@ -155,25 +155,46 @@ public class ProjectManager : MonoBehaviour
                 }
             }
             if(much > 1) { //interne
-                Debug.Log("interne");
+                //Debug.Log("interne");
                 Arete ar = new Arete(triangle[tata[0]].centreCirconscrit.position, triangle[tata[1]].centreCirconscrit.position);
+                arete[i].areteStar = ar;
                 Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointB());
                 areteStar.Add(ar);
 
                 // deux centres cercles circonscrits
             } else if(much != 0) { //externe
-                Debug.Log(tata.Count + " " + much + " " + triangle.Count);
-                Debug.Log(triangle[tata[0]].centreCirconscrit.position);
+                //Debug.Log(tata.Count + " " + much + " " + triangle.Count);
+                //Debug.Log(triangle[tata[0]].centreCirconscrit.position);
                 Point milieu = new Point((arete[i].GetPointA()[0] + arete[i].GetPointB()[0])/2, (arete[i].GetPointA()[1] + arete[i].GetPointB()[1])/2, 0);
                 Arete ar = new Arete(triangle[tata[0]].centreCirconscrit.position, milieu.position);
-                Debug.Log("Milieu : " + milieu.position);
-                Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointB());
-                Arete arLA = CreateLineVoronoi(ar.GetPointA(), ar.GetPointA() + (ar.GetPointB() - ar.GetPointA()) * 10);
+                arete[i].areteStar = ar;
+                //Debug.Log("Milieu : " + milieu.position);
+                Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointA() + (ar.GetPointB() - ar.GetPointA()) * 10);
+                //Arete arLA = CreateLineVoronoi(ar.GetPointA(), ar.GetPointA() + (ar.GetPointB() - ar.GetPointA()) * 10);
 
                 areteStar.Add(ar);
                 // centre cercle circonscrit et milieu de l'arete 
             }
         }
+
+        /*for(int i = 0; i < point.Count; i++) { // XXX
+            List<Vector3> pointsRegionList = new List<Vector3>();
+
+            for(int j = 0; j < arete.Count; j++) {
+                if(arete[j].GetAllPoints().Contains(point[i].transform.position)) {
+                    pointsRegionList.Add(arete[j].areteStar.GetPointA());
+                    pointsRegionList.Add(arete[j].areteStar.GetPointB()); 
+                }
+            }
+
+            for(int l = 0; l < pointsRegionList.Count; l++) {
+                Debug.Log(pointsRegionList[l]);
+            }
+
+            MeshCreator.Instance().SetPoint(pointsRegionList);
+            MeshCreator.Instance().GenerateMesh();
+
+        }*/
     }
     
     /*********** Enveloppe Convex *************/

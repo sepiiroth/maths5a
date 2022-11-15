@@ -113,7 +113,7 @@ public class MeshCreator : MonoBehaviour
         
         
 
-        GameObject go = (GameObject) Instantiate(poly, new Vector3(0,0, 5), Quaternion.Euler(0, 0, 0));
+        GameObject go = (GameObject) Instantiate(poly, new Vector3(0,0,-0.5f), Quaternion.Euler(0, 0, 0));
         go.GetComponent<MeshFilter>().mesh = mesh;
         return;
     }

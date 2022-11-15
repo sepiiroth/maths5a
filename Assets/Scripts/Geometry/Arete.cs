@@ -8,6 +8,7 @@ public class Arete
     private Vector3 pointA, pointB;
     //private List<Triangle> trianglesAssocie;
     private LineRenderer lineRenderer;
+    public Arete areteStar;
 
     public Arete(Vector3 A, Vector3 B)
     {
@@ -30,6 +31,10 @@ public class Arete
     {
         pointB = position;
         lineRenderer.SetPosition(1, position);
+    }
+
+    public List<Vector3> GetAllPoints() {
+        return new List<Vector3>() {pointA, pointB};
     }
 
     public Vector3 GetPointA()
