@@ -48,6 +48,11 @@ public class ProjectManager : MonoBehaviour
         {
             List<GameObject> temp = getConvexEnvelopJarvis(pointsList);
 
+            for (int i = 0; i < temp.Count; i++)
+            {
+                CreateLine(temp[i].transform.position, temp[(i + 1) % temp.Count].transform.position);
+            }
+            /*
             var newLine = Instantiate(linePrefab, Vector3.zero, Quaternion.Euler(0, 0, 0));
             LineRenderer lR = newLine.GetComponent<LineRenderer>();
             lR.positionCount = temp.Count;
@@ -58,7 +63,7 @@ public class ProjectManager : MonoBehaviour
                 lR.SetPosition(index, x.transform.position + new Vector3(0,0,-0.1f)) ;
                 Debug.Log(x.transform.position);
                 index++;
-            }
+            }*/
         }
 
         if(Input.GetKeyDown(KeyCode.G)) {
@@ -96,6 +101,15 @@ public class ProjectManager : MonoBehaviour
     public void AddPointToList(GameObject point)
     {
         pointsList.Add(point);
+        IncrementalTriangulation();
+        Flipping();
+    }
+    
+    public void RemovePointToList(GameObject point)
+    {
+        pointsList.Remove(point);
+        IncrementalTriangulation();
+        Flipping();
     }
 
     public void Voronoi(List<Triangle> triangle, List<Arete> arete) {
@@ -304,6 +318,15 @@ public class ProjectManager : MonoBehaviour
     /************ Trinagulation Incrémentale *************/
     void IncrementalTriangulation()
     {
+        A.ForEach(x => Destroy(x.GetLine()));
+        A.Clear();
+        T.Clear();
+        if (pointsList.Count < 3)
+        {
+            return;
+        }
+
+
         List<GameObject> pointSorted = pointsList.OrderBy(x => x.transform.position.x).ToList();
         List<GameObject> envelop = new List<GameObject>();
         List<GameObject> polygon = new List<GameObject>();
@@ -312,6 +335,11 @@ public class ProjectManager : MonoBehaviour
         
         Arete a1 = CreateLine(tempList[0].transform.position, tempList[1].transform.position);
         Arete a2 = CreateLine(tempList[1].transform.position, tempList[2].transform.position);
+
+        if (pointsList.Count < 4)
+        {
+            return;
+        }
 
         Arete a3 = CreateLine(tempList[0].transform.position, pointSorted[3].transform.position);;
         Arete a4 = CreateLine(tempList[1].transform.position, pointSorted[3].transform.position);;
@@ -482,8 +510,20 @@ public class ProjectManager : MonoBehaviour
                 List<Arete> newT1 = A1234.Where(x => x.GetPointA().Equals(S1) | x.GetPointB().Equals(S1)).ToList();
                 List<Arete> newT2 = A1234.Where(x => x.GetPointA().Equals(S2) | x.GetPointB().Equals(S2)).ToList();
 
+                if (newT1.Count < 2 | newT2.Count < 2)
+                {
+                    Debug.Log(T1.ToString());
+                    Debug.Log(T2.ToString());
+                }
+
+                T.Remove(T1);
+                T.Remove(T2);
+
                 T1 = new Triangle(a, newT1[0], newT1[1]);
                 T2 = new Triangle(a, newT2[0], newT2[1]);
+                
+                T.Add(T1);
+                T.Add(T2);
                 
                 Ac.Add(A1);
                 Ac.Add(A2);

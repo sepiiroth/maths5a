@@ -40,5 +40,25 @@ public class ClickOnPlan : MonoBehaviour
             }
             
         }
+
+        if (Input.GetMouseButtonDown(1))
+        {
+            int layerMaskBack = 1 << 7;
+            RaycastHit hit;
+
+            mousePosition = Input.mousePosition;
+
+            Vector3 newV = mainCamera.ScreenToWorldPoint(new Vector3(mousePosition.x, mousePosition.y, 10f));
+
+            Vector3 dir = (newV - mainCamera.transform.position).normalized;
+            
+            if (Physics.Raycast(mainCamera.transform.position, dir, out hit, Mathf.Infinity, layerMaskBack))
+            {
+                //Debug.Log(hit.collider.gameObject);
+                GameObject temp = (GameObject) hit.collider.gameObject;
+                ProjectManager.Instance().RemovePointToList(temp);
+                Destroy(temp);
+            }
+        }
     }
 }

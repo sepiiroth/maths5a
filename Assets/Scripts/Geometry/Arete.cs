@@ -52,6 +52,11 @@ public class Arete
         return $"{pointA} - {pointB}";
     }
 
+    public GameObject GetLine()
+    {
+        return lineRenderer.gameObject;
+    }
+
     /*public void AddTriangleAssocie(Triangle t)
     {
         trianglesAssocie.Add(t);

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -57,5 +58,11 @@ public class Triangle
     public bool ContainsArete(Arete A)
     {
         return A.Equals(arete1) | A.Equals(arete2) | A.Equals(arete3);
+    }
+
+    
+    public String ToString()
+    {
+        return $"{arete1.ToString()} - {arete2.ToString()} - {arete3.ToString()}";
     }
 }
