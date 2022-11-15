@@ -146,7 +146,10 @@ public class ProjectManager : MonoBehaviour
                 Debug.Log(triangle[tata[0]].centreCirconscrit.position);
                 Point milieu = new Point((arete[i].GetPointA()[0] + arete[i].GetPointB()[0])/2, (arete[i].GetPointA()[1] + arete[i].GetPointB()[1])/2, 0);
                 Arete ar = new Arete(triangle[tata[0]].centreCirconscrit.position, milieu.position);
+                Debug.Log("Milieu : " + milieu.position);
                 Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointB());
+                Arete arLA = CreateLineVoronoi(ar.GetPointA(), ar.GetPointA() + (ar.GetPointB() - ar.GetPointA()) * 10);
+
                 areteStar.Add(ar);
                 // centre cercle circonscrit et milieu de l'arete 
             }
