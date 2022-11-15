@@ -410,6 +410,7 @@ GameObject:
   - component: {fileID: 1980212904}
   - component: {fileID: 1980212905}
   - component: {fileID: 1980212906}
+  - component: {fileID: 1980212907}
   m_Layer: 0
   m_Name: Scripts
   m_TagString: Untagged
@@ -461,3 +462,17 @@ MonoBehaviour:
   linePrefabVoronoi: {fileID: 8009010162481897389, guid: 7006ce6f06a58954882d90e08479531b, type: 3}
   barycentrePrefab: {fileID: 3549915026893579556, guid: c11acde00141ea1438aa2c8e8a139580, type: 3}
   centerCircle: {fileID: 3732537654199394534, guid: bb042d28cbad77540998d85082e28495, type: 3}
+--- !u!114 &1980212907
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1980212903}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 520ffa539a0922c41aec4951a64fc2fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  points: []
+  poly: {fileID: 6520628978709590800, guid: 17137e2a545cc4b42baeae4ecc591958, type: 3}

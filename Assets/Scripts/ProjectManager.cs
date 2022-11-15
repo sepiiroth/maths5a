@@ -96,6 +96,12 @@ public class ProjectManager : MonoBehaviour
         {
             Flipping();
         }
+        
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            MeshCreator.Instance().SetPoint(pointsList.Select(x => x.transform.position).ToList());
+            MeshCreator.Instance().GenerateMesh();
+        }
     }
 
     public void AddPointToList(GameObject point)
