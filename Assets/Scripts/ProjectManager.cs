@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class ProjectManager : MonoBehaviour
@@ -721,6 +722,7 @@ public class ProjectManager : MonoBehaviour
         else
         {
             List<Arete> L = AreteSeenBy(P.transform.position);
+            
             while (L.Count > 0)
             {
                 Arete a = L[0];
@@ -784,7 +786,30 @@ public class ProjectManager : MonoBehaviour
             pointsList.Remove(P);
             return;
         }
+
+        List<Arete> La1 = A.Where(x => x.Contains(P.transform.position)).ToList();;
         
+        List<Triangle> Lt = new List<Triangle>();
+        La1.ForEach(x => Lt.AddRange(GetTriangleFromArete(x)));
+        Lt = Lt.Distinct().ToList();
+        
+        List<Arete> La2 = new List<Arete>();
+        Lt.ForEach(x => La2.AddRange(x.GetAllArete()));
+        La2 = La2.Distinct().ToList();
+        La2 = La2.Where(x => !La1.Contains(x)).ToList();
+
+        for (int i = 0; i < La1.Count; i++)
+        {
+            Destroy(La1[i].GetLine());
+            A.Remove(La1[i]);
+        }
+        
+        for (int i = 0; i < Lt.Count; i++)
+        {
+            T.Remove(Lt[i]);
+        }
+
+        pointsList.Remove(P);
         /*List<GameObject> envelop = new List<GameObject>();
 
         if (T.Count == 0)
@@ -869,8 +894,12 @@ public class ProjectManager : MonoBehaviour
 
     public bool IsInsideCircle(Arete a, Vector3 P)
     {
-        Triangle t = GetTriangleFromArete(a).First();
-        Vector3 center = GetCentreCercleCirconscrit(t);
+        List<Triangle> t = GetTriangleFromArete(a);
+        if (t.Count == 0)
+        {
+            return false;
+        }
+        Vector3 center = GetCentreCercleCirconscrit(t[0]);
         float rayon = Mathf.Abs(Vector3.Distance(center, a.GetPointA()));
 
         return rayon > Vector3.Distance(center, P);
@@ -880,15 +909,15 @@ public class ProjectManager : MonoBehaviour
     {
         List<Vector3> sommets = t.GetSommet();
     
-        Point milieu = new Point((sommets[0][0] + sommets[1][0])/2, (sommets[0][1] + sommets[1][1])/2, 0);
+        Vector3 milieu = new Vector3((sommets[0][0] + sommets[1][0])/2, (sommets[0][1] + sommets[1][1])/2, 0);
         
         float a = -((sommets[1][0] - sommets[0][0])/(sommets[1][1] - sommets[0][1]));
-        var b = - (a * milieu.GetX()) + milieu.GetY();
+        var b = - (a * milieu.x) + milieu.y;
 
-        Point milieu2 = new Point((sommets[1][0] + sommets[2][0])/2, (sommets[1][1] + sommets[2][1])/2, 0);
+        Vector3 milieu2 = new Vector3((sommets[1][0] + sommets[2][0])/2, (sommets[1][1] + sommets[2][1])/2, 0);
         
         float ap = -((sommets[2][0] - sommets[1][0])/(sommets[2][1] - sommets[1][1]));
-        var bp = milieu2.GetY() - (ap * milieu2.GetX());
+        var bp = milieu2.y - (ap * milieu2.x);
 
         var x = (bp - b)/(a - ap);
         var y  = (a * x) + b;
