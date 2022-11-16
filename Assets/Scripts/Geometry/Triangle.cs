@@ -65,4 +65,19 @@ public class Triangle
     {
         return $"{arete1.ToString()} - {arete2.ToString()} - {arete3.ToString()}";
     }
+
+    public bool ContainsPoint(Vector3 P)
+    {
+        List<Vector3> triangleSorted = MeshCreator.Instance().getConvexEnvelopJarvis(this.GetSommet());
+
+        for (int i = 0; i < triangleSorted.Count-1; i++)
+        {
+            if (ProjectManager.Instance().isLeft(triangleSorted[i], triangleSorted[(i+1)], P))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }

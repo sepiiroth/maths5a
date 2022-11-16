@@ -62,6 +62,11 @@ public class Arete
         return lineRenderer.gameObject;
     }
 
+    public bool Contains(Vector3 P)
+    {
+        return pointA == P | pointB == P;
+    }
+
     /*public void AddTriangleAssocie(Triangle t)
     {
         trianglesAssocie.Add(t);

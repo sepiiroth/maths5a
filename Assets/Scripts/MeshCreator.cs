@@ -44,43 +44,44 @@ public class MeshCreator : MonoBehaviour
         List<int> indices = new List<int>();
         List<Vector3> normals = new List<Vector3>();
         List<Vector2> uv = new List<Vector2>();
+
+
+        
+        indices = Enumerable.Range(0, (points.Count - 2) * 3).ToList();
+        normals = Enumerable.Repeat(Vector3.back, (points.Count - 2) * 3).ToList();
         
         List<Vector3> pointSorted = points.OrderBy(x => x.x).ToList();
         List<Vector3> envelop = new List<Vector3>();
         List<Vector3> polygon = new List<Vector3>();
 
-        var tempList = pointSorted.GetRange(0, 3).OrderBy(x => x.y).ToList();
+        //var tempList = pointSorted.GetRange(0, 3).OrderBy(x => x.transform.position.y).ToList();
         
-        Arete a1 = new Arete(tempList[0], tempList[1]);
-        Arete a2 = new Arete(tempList[1], tempList[2]);
-
-        Arete a3 = new Arete(tempList[0], pointSorted[3]);
-        Arete a4 = new Arete(tempList[1], pointSorted[3]);
-        Arete a5 = new Arete(tempList[2], pointSorted[3]);
-
-        Triangle t1 = new Triangle(a1, a3, a4);
-        Triangle t2 = new Triangle(a2, a5, a4);
-        
-        
-        
-        vertices.AddRange(getConvexEnvelopJarvis(t1.GetSommet()).GetRange(0,3));
-        vertices.AddRange(getConvexEnvelopJarvis(t2.GetSommet()).GetRange(0,3));
-        indices = Enumerable.Range(0, (points.Count - 2) * 3).ToList();
-        normals = Enumerable.Repeat(Vector3.back, (points.Count - 2) * 3).ToList();
-        
-        //T.Add(t1);
-        //T.Add(t2);
+        Arete a1 = new Arete(pointSorted[0], pointSorted[1]);
         
         polygon.Add(pointSorted[0]);
         polygon.Add(pointSorted[1]);
-        polygon.Add(pointSorted[2]);
-        polygon.Add(pointSorted[3]);
         pointSorted.RemoveAt(0);
         pointSorted.RemoveAt(0);
-        pointSorted.RemoveAt(0);
-        pointSorted.RemoveAt(0);
-        
-        envelop = getConvexEnvelopJarvis(polygon);
+        //Arete a2 = CreateLine(tempList[1].transform.position, tempList[2].transform.position);
+
+        if (points.Count < 2)
+        {
+            return;
+        }
+
+        for (int i = 0; i < pointSorted.Count; i++)
+        {
+            Vector3 v = polygon[0] - polygon[1];
+            Vector3 u = polygon[1] - pointSorted[0];
+            if (!ProjectManager.Instance().isColinear(v,u))
+            {
+                break;
+            }
+
+            new Arete(pointSorted[i], pointSorted[(i + 1) % pointSorted.Count]);
+            polygon.Add(pointSorted[0]);
+            pointSorted.RemoveAt(0);
+        }
 
         while (pointSorted.Count > 0)
         {
