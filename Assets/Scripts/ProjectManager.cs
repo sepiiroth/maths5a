@@ -212,11 +212,11 @@ public class ProjectManager : MonoBehaviour
                 Vector3 dir1 = pt1.transform.position - pt2.transform.position; //vec2 to vec1
                 Vector3 dir2 = pt.transform.position - pt1.transform.position;//last selected point to current point position
                 var cross = Vector3.Cross(dir1, dir2);// cross product
-                if(cross[2] < 0) { // si z negatif right turn sinon left turn 
+                if(cross[2] < 0) { // tournant a droite 
                     selPts.RemoveAt(selPts.Count - 1);
-                } else {
-                    selPts.Add(pt); //add current point to the selpoints
-                    pts.RemoveAt(0); // remove from the current point the first one
+                } else { // tournant a gauche on passe au point suivant
+                    selPts.Add(pt); 
+                    pts.RemoveAt(0);
                 }
             }
         }
