@@ -168,8 +168,8 @@ public class ProjectManager : MonoBehaviour
             if(much > 1) { //interne
                 //Debug.Log("interne");
                 Arete ar = new Arete(triangle[tata[0]].centreCirconscrit.position, triangle[tata[1]].centreCirconscrit.position);
-                arete[i].areteStar = ar;
                 Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointB());
+                arete[i].areteStar = arL;
                 areteStar.Add(ar);
 
                 // deux centres cercles circonscrits
@@ -178,9 +178,9 @@ public class ProjectManager : MonoBehaviour
                 //Debug.Log(triangle[tata[0]].centreCirconscrit.position);
                 Point milieu = new Point((arete[i].GetPointA()[0] + arete[i].GetPointB()[0])/2, (arete[i].GetPointA()[1] + arete[i].GetPointB()[1])/2, 0);
                 Arete ar = new Arete(triangle[tata[0]].centreCirconscrit.position, milieu.position);
-                arete[i].areteStar = ar;
                 //Debug.Log("Milieu : " + milieu.position);
                 Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointA() + (ar.GetPointB() - ar.GetPointA()) * 10);
+                arete[i].areteStar = arL;
                 //Arete arLA = CreateLineVoronoi(ar.GetPointA(), ar.GetPointA() + (ar.GetPointB() - ar.GetPointA()) * 10);
 
                 areteStar.Add(ar);
@@ -188,7 +188,7 @@ public class ProjectManager : MonoBehaviour
             }
         }
 
-        for(int i = 0; i < point.Count; i++) { // XXX
+        /*for(int i = 0; i < point.Count; i++) { // XXX
             List<Vector3> pointsRegionList = new List<Vector3>();
 
             for(int j = 0; j < arete.Count; j++) {
@@ -202,10 +202,10 @@ public class ProjectManager : MonoBehaviour
                 Debug.Log(pointsRegionList[l]);
             }
 
-            MeshCreator.Instance().SetPoint(pointsRegionList);
+            MeshCreator.Instance().SetPoint(pointsRegionList.Distinct().ToList());
             MeshCreator.Instance().GenerateMesh();
 
-        }
+        }*/
     }
     
     /*********** Enveloppe Convex *************/
@@ -704,49 +704,51 @@ public class ProjectManager : MonoBehaviour
         }
 
         Triangle insider = GetTriangleContainingPoint(P.transform.position);
+
+        List<Arete> L = new List<Arete>();
         
         if (insider != null)
         {
-            List<Vector3> sommet = insider.GetSommet().ToList();
-            sommet = MeshCreator.Instance().getConvexEnvelopJarvis(sommet);
+            List<Arete> arete = insider.GetAllArete().ToList();
+            //sommet = MeshCreator.Instance().getConvexEnvelopJarvis(sommet);
+            
+            
+            L.AddRange(arete);
+            
             T.Remove(insider);
-            for (int i = 0; i < sommet.Count-1; i++)
-            {
-                Arete areteA = CreateLine(sommet[i], P.transform.position);
-                Arete areteB = CreateLine(sommet[(i+1)%sommet.Count], P.transform.position);
-                Arete areteC = CreateLine(sommet[i], sommet[(i + 1) % sommet.Count]);
-                Triangle t = new Triangle(areteA, areteB, areteC);
-                T.Add(t);
-            }
         }
         else
         {
-            List<Arete> L = AreteSeenBy(P.transform.position);
+            L = AreteSeenBy(P.transform.position);
             
-            while (L.Count > 0)
+        }
+        
+        while (L.Count > 0)
+        {
+            Arete a = L[0];
+            if (IsInsideCircle(a,P.transform.position))
             {
-                Arete a = L[0];
-                if (IsInsideCircle(a,P.transform.position))
+                List<Triangle> list = GetTriangleFromArete(a);
+                for (int i = 0; i < list.Count; i++)
                 {
-                    Triangle t = GetTriangleFromArete(a).First();
-                    var sommetT = t.GetAllArete();
+                    var sommetT = list[i].GetAllArete();
                     sommetT.Remove(a);
                     L.AddRange(sommetT);
                     Destroy(a.GetLine());
                     A.Remove(a);
-                    T.Remove(t);
+                    T.Remove(list[i]);
                 }
-                else
-                {
-                    Arete areteA = CreateLine(a.GetPointA(), P.transform.position);
-                    Arete areteB = CreateLine(a.GetPointB(), P.transform.position);
-                    Triangle t = new Triangle(areteA, areteB, a);
-                    T.Add(t);
-                }
-                L.Remove(a);
+                
             }
+            else
+            {
+                Arete areteA = CreateLine(a.GetPointA(), P.transform.position);
+                Arete areteB = CreateLine(a.GetPointB(), P.transform.position);
+                Triangle t = new Triangle(areteA, areteB, a);
+                T.Add(t);
+            }
+            L.Remove(a);
         }
-        
         pointsList.Add(P);
 
     }
@@ -810,6 +812,65 @@ public class ProjectManager : MonoBehaviour
         }
 
         pointsList.Remove(P);
+
+        List<Vector3> Ls = new List<Vector3>();
+        La2.ForEach(x => Ls.AddRange(x.GetAllPoints()));
+        Ls = Ls.Distinct().ToList();
+
+        if (La2.Count == Ls.Count)//Fermé
+        {
+            while(La2.Count > 3)
+            {
+                Arete a1 = La2[0];
+                Arete a2 = null;
+                Triangle t = null;
+                La2.Remove(a1);
+                List<Arete> temp = La2.Where(x => x.Contains(a1.GetPointA()) | x.Contains(a1.GetPointB())).ToList();
+                a2 = temp[0];
+                /*for (int i = 0; i < temp.Count; i++)
+                {
+                    List<Vector3> posTemp = new List<Vector3>();
+                    posTemp.AddRange(a1.GetAllPoints());
+                    posTemp.AddRange(temp[i].GetAllPoints());
+                    posTemp = posTemp.Distinct().ToList();
+
+                    posTemp = MeshCreator.Instance().getConvexEnvelopJarvis(posTemp);
+                    Arete k1 = new Arete(posTemp[0], posTemp[1]);
+                    Arete k2 = new Arete(posTemp[1], posTemp[2]);
+                    Arete k3 = new Arete(posTemp[2], posTemp[0]);
+                    t = new Triangle(k1, k2, k3);
+
+                    var center = GetCentreCercleCirconscrit(t);
+                    var rayon = Mathf.Abs(Vector3.Distance(center, posTemp[0]));
+
+                    if (La2.All(x => x.GetAllPoints().All(y => rayon < Vector3.Distance(center, y))))
+                    {
+                        a2 = temp[i];
+                        break;
+                    }
+                }*/
+                
+                Debug.Log(La2.Count);
+                
+                List<Vector3> sommets = new List<Vector3>();
+                sommets.AddRange(a1.GetAllPoints());
+                sommets.AddRange(a2.GetAllPoints());
+                sommets = sommets.Distinct().ToList();
+                
+                t = new Triangle(sommets[0], sommets[1], sommets[2]);
+                var a3search = t.GetAllArete();
+                a3search.Remove(a1);
+                a3search.Remove(a2);
+                Arete a3 = new Arete(a3search[0].GetPointA(), a3search[0].GetPointB());
+                
+                T.Add(t);
+                CreateLine(a3.GetPointA(), a3.GetPointB());
+                La2.Remove(a2);
+                La2.Add(a3);
+                Debug.Log(La2.Count);
+                La2.ForEach(x => Debug.Log(x.ToString()));
+            }
+        }
         /*List<GameObject> envelop = new List<GameObject>();
 
         if (T.Count == 0)
