@@ -848,10 +848,10 @@ public class ProjectManager : MonoBehaviour
                 Arete a2 = null;
                 Triangle t = null;
                 La2.Remove(a1);
-                List<Arete> temp = La2.Where(x => x.Contains(a1.GetPointA()) | x.Contains(a1.GetPointB())).ToList();
-                a2 = temp[0];
-                /*for (int i = 0; i < temp.Count; i++)
-                {
+                List<Arete> temp = La2.Where(x => (x.Contains(a1.GetPointB()))).ToList();
+                //a2 = temp[0];
+                for (int i = 0; i < temp.Count; i++)
+                { 
                     List<Vector3> posTemp = new List<Vector3>();
                     posTemp.AddRange(a1.GetAllPoints());
                     posTemp.AddRange(temp[i].GetAllPoints());
@@ -866,95 +866,104 @@ public class ProjectManager : MonoBehaviour
                     var center = GetCentreCercleCirconscrit(t);
                     var rayon = Mathf.Abs(Vector3.Distance(center, posTemp[0]));
 
-                    if (La2.All(x => x.GetAllPoints().All(y => rayon < Vector3.Distance(center, y))))
+                    var check = false; 
+
+                    foreach (var x in La2.Select(x => x.GetAllPoints()).Distinct())
+                    {
+                        if (x.All(y => rayon < Vector3.Distance(center, y)))
+                        {
+                            check = true;
+                            break;
+                        }
+
+                    }
+                    
+                    if (check)
                     {
                         a2 = temp[i];
                         break;
                     }
-                }*/
-                
-                Debug.Log(La2.Count);
-                
+                }
+
+                if (a2 == null)
+                {
+                    a2 = temp[0];
+                }
                 List<Vector3> sommets = new List<Vector3>();
                 sommets.AddRange(a1.GetAllPoints());
                 sommets.AddRange(a2.GetAllPoints());
                 sommets = sommets.Distinct().ToList();
                 
-                t = new Triangle(sommets[0], sommets[1], sommets[2]);
+                t = new Triangle(CreateLine(sommets[0], sommets[1]), CreateLine(sommets[1], sommets[2]), CreateLine(sommets[2], sommets[0]));
                 var a3search = t.GetAllArete();
+                a3search.RemoveAll(x => La2.Contains(x));
                 a3search.Remove(a1);
-                a3search.Remove(a2);
+                Debug.Log(a3search.Count);
                 Arete a3 = new Arete(a3search[0].GetPointA(), a3search[0].GetPointB());
                 
                 T.Add(t);
-                CreateLine(a3.GetPointA(), a3.GetPointB());
+                a3 = CreateLine(a3.GetPointA(), a3.GetPointB());
                 La2.Remove(a2);
                 La2.Add(a3);
-                Debug.Log(La2.Count);
-                La2.ForEach(x => Debug.Log(x.ToString()));
-            }
-        }
-        /*List<GameObject> envelop = new List<GameObject>();
-
-        if (T.Count == 0)
-        {
-            for (int i = 0; i < pointSorted.Count-1; i++)
-            {
-                Arete areteA = CreateLine(pointSorted[i].transform.position, P.transform.position);
-                Arete areteB = CreateLine(pointSorted[(i+1)].transform.position, P.transform.position);
-                Arete areteC = CreateLine(pointSorted[i].transform.position,
-                    pointSorted[(i + 1)].transform.position);
-                Triangle t = new Triangle(areteA, areteB, areteC);
-                T.Add(t);
-            }
-            pointsList.Add(P);
-            return;
-        }
-
-        Triangle insider = GetTriangleContainingPoint(P.transform.position);
-        Debug.Log(T.Count);
-        if (insider != null)
-        {
-            List<Vector3> sommet = insider.GetSommet().ToList();
-            sommet = MeshCreator.Instance().getConvexEnvelopJarvis(sommet);
-            T.Remove(insider);
-            for (int i = 0; i < sommet.Count-1; i++)
-            {
-                Arete areteA = CreateLine(sommet[i], P.transform.position);
-                Arete areteB = CreateLine(sommet[(i+1)%sommet.Count], P.transform.position);
-                Arete areteC = CreateLine(sommet[i], sommet[(i + 1) % sommet.Count]);
-                Triangle t = new Triangle(areteA, areteB, areteC);
-                T.Add(t);
+                
             }
         }
         else
         {
-            List<Arete> L = AreteSeenBy(P.transform.position);
-            while (L.Count > 0)
+            List<Vector3> sommets = new List<Vector3>();
+            La2.ForEach(x=> sommets.AddRange(x.GetAllPoints()));
+            sommets = sommets.Distinct().ToList();
+
+            while (!sommets.All(x => CheckOutsideSupp(x, La2, sommets)))
             {
-                Arete a = L[0];
-                if (IsInsideCircle(a,P.transform.position))
-                {
-                    Triangle t = GetTriangleFromArete(a).First();
-                    var sommetT = t.GetAllArete();
-                    sommetT.Remove(a);
-                    L.AddRange(sommetT);
-                    Destroy(a.GetLine());
-                    A.Remove(a);
-                    T.Remove(t);
-                }
-                else
-                {
-                    Arete areteA = CreateLine(a.GetPointA(), P.transform.position);
-                    Arete areteB = CreateLine(a.GetPointB(), P.transform.position);
-                    Triangle t = new Triangle(areteA, areteB, a);
-                    T.Add(t);
-                }
-                L.Remove(a);
+                Debug.Log(sommets.All(x => CheckOutsideSupp(x, La2, sommets)));
+                var s = sommets.Where(x => CheckOutsideSupp(x, La2, sommets)).First();
+                Debug.Log(s);
+                var areteIncident = La2.Where(x => x.Contains(s)).ToList();
+                var a1 = areteIncident[0];
+                var a2 = areteIncident[1];
+                
+                var sommetTriangle = a1.GetAllPoints();
+                sommetTriangle.AddRange(a2.GetAllPoints());
+                sommetTriangle = sommetTriangle.Distinct().ToList();
+                sommetTriangle = MeshCreator.Instance().getConvexEnvelopJarvis(sommetTriangle);
+
+                Triangle t = new Triangle(CreateLine(sommetTriangle[0], sommetTriangle[1]),
+                    CreateLine(sommetTriangle[1], sommetTriangle[2]), CreateLine(sommetTriangle[2], sommetTriangle[0]));
+
+                var a3 = t.GetAllArete().Where(x => !La2.Contains(x)).First();
+                La2.Remove(a1);
+                La2.Remove(a2);
+                La2.Add(a3);
+                T.Add(t);
+                sommets = new List<Vector3>();
+                La2.ForEach(x=> sommets.AddRange(x.GetAllPoints()));
+                sommets = sommets.Distinct().ToList();
+
             }
+
         }
-        
-        pointsList.Add(P);*/
+
+    }
+
+    public bool CheckOutsideSupp(Vector3 s, List<Arete> La2, List<Vector3> sommets)
+    {
+        var areteIncident = La2.Where(x => x.Contains(s)).ToList();
+        if (areteIncident.Count < 2)
+        {
+            return false;
+        }
+        var a1 = areteIncident[0];
+        var a2 = areteIncident[1];
+        var sommetTriangle = a1.GetAllPoints();
+        sommetTriangle.AddRange(a2.GetAllPoints());
+        sommetTriangle = sommetTriangle.Distinct().ToList();
+        sommetTriangle = MeshCreator.Instance().getConvexEnvelopJarvis(sommetTriangle);
+
+        Triangle t = new Triangle(CreateLine(sommetTriangle[0], sommetTriangle[1]),
+            CreateLine(sommetTriangle[1], sommetTriangle[2]), CreateLine(sommetTriangle[2], sommetTriangle[0]));
+
+        return sommets.All(x => !IsInsideCircle(t, x));
 
     }
 
@@ -985,6 +994,14 @@ public class ProjectManager : MonoBehaviour
         }
         Vector3 center = GetCentreCercleCirconscrit(t[0]);
         float rayon = Mathf.Abs(Vector3.Distance(center, a.GetPointA()));
+
+        return rayon > Vector3.Distance(center, P);
+    }
+
+    public bool IsInsideCircle(Triangle t, Vector3 P)
+    {
+        Vector3 center = GetCentreCercleCirconscrit(t);
+        float rayon = Mathf.Abs(Vector3.Distance(center, t.GetSommet()[0]));
 
         return rayon > Vector3.Distance(center, P);
     }
