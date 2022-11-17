@@ -474,4 +474,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 520ffa539a0922c41aec4951a64fc2fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  points:
+  - {x: 4, y: 1, z: 0}
+  - {x: 8, y: 2, z: 0}
+  - {x: 15, y: 7, z: 0}
+  - {x: 9, y: 4, z: 0}
+  - {x: 0, y: 3, z: 0}
+  - {x: 3, y: 1, z: 0}
   poly: {fileID: 6520628978709590800, guid: 17137e2a545cc4b42baeae4ecc591958, type: 3}

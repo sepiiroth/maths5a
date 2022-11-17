@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class MeshCreator : MonoBehaviour
 {
-    private List<Vector3> points;
+    public List<Vector3> points;
     public GameObject poly;
 
     public static MeshCreator Instance()
@@ -82,9 +82,12 @@ public class MeshCreator : MonoBehaviour
             pointSorted.RemoveAt(0);
         }
 
+        envelop = getConvexEnvelopJarvis(polygon);
+
         while (pointSorted.Count > 0)
         {
             envelop = getConvexEnvelopJarvis(polygon);
+            
             for (int i = 0; i < envelop.Count; i++)
             {
                 var left = isLeft(envelop[i], envelop[(i+1) % envelop.Count],
@@ -104,6 +107,7 @@ public class MeshCreator : MonoBehaviour
         
 
         var mesh = new Mesh {name = "MeshGenerate"};
+        
         
         indices = Enumerable.Range(0, vertices.Count).ToList();
         normals = Enumerable.Repeat(Vector3.back, vertices.Count).ToList();
@@ -148,6 +152,11 @@ public class MeshCreator : MonoBehaviour
     
     public List<Vector3> getConvexEnvelopJarvis(List<Vector3> points)
     {
+        if (points.Count < 3)
+        {
+            return points.OrderBy(x => x.x).ThenBy(x => x.y).ToList();
+        }
+
         List<Vector3> result = new List<Vector3>();
         
         var pointMin = points[0];
@@ -198,6 +207,7 @@ public class MeshCreator : MonoBehaviour
     {
         var minAngle = 361f;
         Vector3 minPoint = Vector3.zero;
+        points.ForEach(x => Debug.Log(x));
         for (int i = 0; i < points.Count; i++)
         {
             if (points[i] != currentPoint && points[i] != lastPoint)

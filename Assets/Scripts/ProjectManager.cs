@@ -177,26 +177,26 @@ public class ProjectManager : MonoBehaviour
                 if(triangle[index[0]].ContainsPoint(triangle[index[0]].centreCirconscrit.position)) { // Le point est dans le triangle
                     Arete ar = new Arete(triangle[index[0]].centreCirconscrit.position, milieu.position); 
                     Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointA() + (ar.GetPointB() - ar.GetPointA()) * 1000);
-                    arete[i].areteStar = ar;
+                    arete[i].areteStar = arL;
                     areteStar.Add(ar);
                 } else {
                     Vector3 vecDir = new Vector3(triangle[index[0]].centreCirconscrit.position[0] - milieu.position[0], triangle[index[0]].centreCirconscrit.position[1] - milieu.position[1], 0);
                     if(PolygonContainsPoint(triangle[index[0]].centreCirconscrit.position)) { // Le point est dans le polygone
                         Arete ar = new Arete(triangle[index[0]].centreCirconscrit.position, milieu.position-vecDir); 
                         Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointB() * 1000);
-                        arete[i].areteStar = ar;
+                        arete[i].areteStar = arL;
                         areteStar.Add(ar);
                     } else { 
                         Arete ar = new Arete(triangle[index[0]].centreCirconscrit.position, triangle[index[0]].centreCirconscrit.position+vecDir); 
                         Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointB() * 1000);
-                        arete[i].areteStar = ar;
+                        arete[i].areteStar = arL;
                         areteStar.Add(ar);
                     }
                 }
             }
         }
 
-        /*for(int i = 0; i < point.Count; i++) { // XXX
+        for(int i = 0; i < point.Count; i++) { // XXX
             List<Vector3> pointsRegionList = new List<Vector3>();
 
             for(int j = 0; j < arete.Count; j++) {
@@ -213,7 +213,7 @@ public class ProjectManager : MonoBehaviour
             MeshCreator.Instance().SetPoint(pointsRegionList.Distinct().ToList());
             MeshCreator.Instance().GenerateMesh();
 
-        }*/
+        }
     }
 
     public bool PolygonContainsPoint(Vector3 P)
