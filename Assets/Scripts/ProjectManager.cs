@@ -17,6 +17,8 @@ public class ProjectManager : MonoBehaviour
     private List<GameObject> pointsList;
     private List<Arete> A;
     private List<Triangle> T;
+    private List<Point> centreCircleList = new List<Point>();
+    private List<Arete> areteStar = new List<Arete>();
 
     [SerializeField]
     private GameObject linePrefab;
@@ -130,65 +132,71 @@ public class ProjectManager : MonoBehaviour
     }
 
     public void Voronoi(List<Triangle> triangle, List<Arete> arete, List<GameObject> point) {
-        List<Point> centreCircleList = new List<Point>();
-        List<Arete> areteStar = new List<Arete>();
         for(int i = 0; i < triangle.Count; i++) { //Determiner le centre CT du cercle cicronscrit au triangle T
             List<Vector3> sommets = triangle[i].GetSommet();
     
             Point milieu = new Point((sommets[0][0] + sommets[1][0])/2, (sommets[0][1] + sommets[1][1])/2, 0);
-            //var middle = Instantiate(barycentrePrefab, milieu.position, Quaternion.Euler(0, 0, 0));
-            //float coeffDir1 = (sommets[1][1] - sommets[0][1])/(sommets[1][0] - sommets[0][0]);
             float a = -((sommets[1][0] - sommets[0][0])/(sommets[1][1] - sommets[0][1]));
             var b = - (a * milieu.GetX()) + milieu.GetY();
 
             Point milieu2 = new Point((sommets[1][0] + sommets[2][0])/2, (sommets[1][1] + sommets[2][1])/2, 0);
-            //middle = Instantiate(barycentrePrefab, milieu2.position, Quaternion.Euler(0, 0, 0));
-            //float coeffDir2 = (sommets[2][1] - sommets[1][1])/(sommets[2][0] - sommets[1][0]);
             float ap = -((sommets[2][0] - sommets[1][0])/(sommets[2][1] - sommets[1][1]));
             var bp = milieu2.GetY() - (ap * milieu2.GetX());
 
             var x = (bp - b)/(a - ap);
             var y  = (a * x) + b;
+
             Point centreCircleP = new Point(x, y, 0);
+
             centreCircleList.Add(centreCircleP);
+
             var center = Instantiate(centerCircle, centreCircleP.position, Quaternion.Euler(0, 0, 0));
+
             triangle[i].centreCirconscrit = centreCircleP;
         }
-
-        for(int i = 0; i < arete.Count; i++) {
+    
+        for(int i = 0; i < arete.Count; i++) {  //Determiner l'arete aStar de l'arete a
+            List<int> index = new List<int>();
             int much = 0;
-            List<int> tata = new List<int>();
-            for(int j = 0; j < triangle.Count; j++) {
+            
+            for(int j = 0; j < triangle.Count; j++) { // Dans combien de triangles l'arete est utilise ?
                 if(triangle[j].GetAllArete().Contains(arete[i])) {
                     much++;
-                    tata.Add(j);
-                                        
+                    index.Add(j);                   
                 }
             }
-            if(much > 1) { //interne
-                //Debug.Log("interne");
-                Arete ar = new Arete(triangle[tata[0]].centreCirconscrit.position, triangle[tata[1]].centreCirconscrit.position);
-                arete[i].areteStar = ar;
+
+            if(much > 1) { // arete interne donc aStar = 2 centreCircle
+                Arete ar = new Arete(triangle[index[0]].centreCirconscrit.position, triangle[index[1]].centreCirconscrit.position);
                 Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointB());
-                areteStar.Add(ar);
-
-                // deux centres cercles circonscrits
-            } else if(much != 0) { //externe
-                //Debug.Log(tata.Count + " " + much + " " + triangle.Count);
-                //Debug.Log(triangle[tata[0]].centreCirconscrit.position);
-                Point milieu = new Point((arete[i].GetPointA()[0] + arete[i].GetPointB()[0])/2, (arete[i].GetPointA()[1] + arete[i].GetPointB()[1])/2, 0);
-                Arete ar = new Arete(triangle[tata[0]].centreCirconscrit.position, milieu.position);
                 arete[i].areteStar = ar;
-                //Debug.Log("Milieu : " + milieu.position);
-                Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointA() + (ar.GetPointB() - ar.GetPointA()) * 10);
-                //Arete arLA = CreateLineVoronoi(ar.GetPointA(), ar.GetPointA() + (ar.GetPointB() - ar.GetPointA()) * 10);
-
                 areteStar.Add(ar);
-                // centre cercle circonscrit et milieu de l'arete 
+            } else if(much != 0) { // arete externe donc aStar centreCircle, milieuArete
+                Point milieu = new Point((arete[i].GetPointA()[0] + arete[i].GetPointB()[0])/2, (arete[i].GetPointA()[1] + arete[i].GetPointB()[1])/2, 0);
+                
+                if(triangle[index[0]].ContainsPoint(triangle[index[0]].centreCirconscrit.position)) { // Le point est dans le triangle
+                    Arete ar = new Arete(triangle[index[0]].centreCirconscrit.position, milieu.position); 
+                    Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointA() + (ar.GetPointB() - ar.GetPointA()) * 1000);
+                    arete[i].areteStar = ar;
+                    areteStar.Add(ar);
+                } else {
+                    Vector3 vecDir = new Vector3(triangle[index[0]].centreCirconscrit.position[0] - milieu.position[0], triangle[index[0]].centreCirconscrit.position[1] - milieu.position[1], 0);
+                    if(PolygonContainsPoint(triangle[index[0]].centreCirconscrit.position)) { // Le point est dans le polygone
+                        Arete ar = new Arete(triangle[index[0]].centreCirconscrit.position, milieu.position-vecDir); 
+                        Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointB() * 1000);
+                        arete[i].areteStar = ar;
+                        areteStar.Add(ar);
+                    } else { 
+                        Arete ar = new Arete(triangle[index[0]].centreCirconscrit.position, triangle[index[0]].centreCirconscrit.position+vecDir); 
+                        Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointB() * 1000);
+                        arete[i].areteStar = ar;
+                        areteStar.Add(ar);
+                    }
+                }
             }
         }
 
-        for(int i = 0; i < point.Count; i++) { // XXX
+        /*for(int i = 0; i < point.Count; i++) { // XXX
             List<Vector3> pointsRegionList = new List<Vector3>();
 
             for(int j = 0; j < arete.Count; j++) {
@@ -205,7 +213,22 @@ public class ProjectManager : MonoBehaviour
             MeshCreator.Instance().SetPoint(pointsRegionList);
             MeshCreator.Instance().GenerateMesh();
 
+        }*/
+    }
+
+    public bool PolygonContainsPoint(Vector3 P)
+    {
+        List<Vector3> triangleSorted = MeshCreator.Instance().getConvexEnvelopJarvis(pointsList.Select(x=>x.transform.position).ToList());
+
+        for (int i = 0; i < triangleSorted.Count-1; i++)
+        {
+            if (ProjectManager.Instance().isLeft(triangleSorted[i], triangleSorted[(i+1)], P))
+            {
+                return false;
+            }
         }
+
+        return true;
     }
     
     /*********** Enveloppe Convex *************/
