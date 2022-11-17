@@ -47,8 +47,7 @@ public class MeshCreator : MonoBehaviour
 
 
         
-        indices = Enumerable.Range(0, (points.Count - 2) * 3).ToList();
-        normals = Enumerable.Repeat(Vector3.back, (points.Count - 2) * 3).ToList();
+        
         
         List<Vector3> pointSorted = points.OrderBy(x => x.x).ToList();
         List<Vector3> envelop = new List<Vector3>();
@@ -105,8 +104,13 @@ public class MeshCreator : MonoBehaviour
         
 
         var mesh = new Mesh {name = "MeshGenerate"};
+        
+        indices = Enumerable.Range(0, vertices.Count).ToList();
+        normals = Enumerable.Repeat(Vector3.back, vertices.Count).ToList();
 
         Debug.Log($"'{vertices.Count} - {indices.Count} - {normals.Count}");
+        
+        
         
         mesh.vertices = vertices.ToArray();
         mesh.triangles = indices.ToArray();

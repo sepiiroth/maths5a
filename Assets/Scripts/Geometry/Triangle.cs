@@ -14,6 +14,16 @@ public class Triangle
         arete2 = A2;
         arete3 = A3;
     }
+    
+    public Triangle(Vector3 V1, Vector3 V2, Vector3 V3)
+    {
+        List<Vector3> sommet = new List<Vector3>() {V1, V2, V3};
+        sommet = MeshCreator.Instance().getConvexEnvelopJarvis(sommet);
+
+        arete1 = new Arete(sommet[0], sommet[1]);
+        arete2 = new Arete(sommet[1], sommet[2]);;
+        arete3 = new Arete(sommet[2], sommet[0]);;
+    }
 
     public Arete GetArete(int index)
     {
