@@ -840,15 +840,22 @@ public class ProjectManager : MonoBehaviour
         La2.ForEach(x => Ls.AddRange(x.GetAllPoints()));
         Ls = Ls.Distinct().ToList();
 
+        
+        List<Vector3> sommets;
+
         if (La2.Count == Ls.Count)//Fermé
         {
             while(La2.Count > 3)
             {
-                Arete a1 = La2[0];
+                sommets = new List<Vector3>();
+                La2.ForEach(x=> sommets.AddRange(x.GetAllPoints()));
+                sommets = sommets.OrderByDescending(x => x.y).Distinct().ToList();
+                var s = sommets[0];
+                Arete a1 = La2.Where(x => x.Contains(s)).First();
                 Arete a2 = null;
                 Triangle t = null;
                 La2.Remove(a1);
-                List<Arete> temp = La2.Where(x => (x.Contains(a1.GetPointB()))).ToList();
+                List<Arete> temp = La2.Where(x => (x.Contains(s) && !x.Equals(a1))).ToList();
                 //a2 = temp[0];
                 for (int i = 0; i < temp.Count; i++)
                 { 
@@ -889,12 +896,12 @@ public class ProjectManager : MonoBehaviour
                 {
                     a2 = temp[0];
                 }
-                List<Vector3> sommets = new List<Vector3>();
-                sommets.AddRange(a1.GetAllPoints());
-                sommets.AddRange(a2.GetAllPoints());
-                sommets = sommets.Distinct().ToList();
+                List<Vector3> sommetsTriangle = new List<Vector3>();
+                sommetsTriangle.AddRange(a1.GetAllPoints());
+                sommetsTriangle.AddRange(a2.GetAllPoints());
+                sommetsTriangle = sommetsTriangle.Distinct().ToList();
                 
-                t = new Triangle(CreateLine(sommets[0], sommets[1]), CreateLine(sommets[1], sommets[2]), CreateLine(sommets[2], sommets[0]));
+                t = new Triangle(CreateLine(sommetsTriangle[0], sommetsTriangle[1]), CreateLine(sommetsTriangle[1], sommetsTriangle[2]), CreateLine(sommetsTriangle[2], sommetsTriangle[0]));
                 var a3search = t.GetAllArete();
                 a3search.RemoveAll(x => La2.Contains(x));
                 a3search.Remove(a1);
@@ -907,18 +914,18 @@ public class ProjectManager : MonoBehaviour
                 La2.Add(a3);
                 
             }
+            T.Add(new Triangle(La2[0], La2[1], La2[2]));
         }
         else
         {
-            List<Vector3> sommets = new List<Vector3>();
+            sommets = new List<Vector3>();
             La2.ForEach(x=> sommets.AddRange(x.GetAllPoints()));
-            sommets = sommets.Distinct().ToList();
-
-            while (!sommets.All(x => CheckOutsideSupp(x, La2, sommets)))
+            sommets = sommets.OrderByDescending(x => x.y).Where(x => CheckConvexPoint(x, La2, P.transform.position)).Distinct().ToList();
+            
+            while (sommets.Count > 0 | !sommets.All(x => CheckOutsideSupp(x, La2, sommets,P.transform.position)))
             {
-                Debug.Log(sommets.All(x => CheckOutsideSupp(x, La2, sommets)));
-                var s = sommets.Where(x => CheckOutsideSupp(x, La2, sommets)).First();
-                Debug.Log(s);
+                Debug.Log(sommets.Count);
+                var s = sommets.Where(x => CheckOutsideSupp(x, La2, sommets,P.transform.position)).First();
                 var areteIncident = La2.Where(x => x.Contains(s)).ToList();
                 var a1 = areteIncident[0];
                 var a2 = areteIncident[1];
@@ -938,15 +945,45 @@ public class ProjectManager : MonoBehaviour
                 T.Add(t);
                 sommets = new List<Vector3>();
                 La2.ForEach(x=> sommets.AddRange(x.GetAllPoints()));
-                sommets = sommets.Distinct().ToList();
+                sommets = sommets.OrderByDescending(x => x.y).Where(x => CheckConvexPoint(x, La2, P.transform.position)).Distinct().ToList();
 
             }
+            
 
         }
+    }
+
+    public bool CheckOutsideSupp(Vector3 s, List<Arete> La2, List<Vector3> sommets, Vector3 P)
+    {
+        List<Vector3> temp = new List<Vector3>(sommets);
+        temp.Remove(s);
+        if (temp.Count == 0)
+        {
+            return true;
+        }
+        var areteIncident = La2.Where(x => x.Contains(s)).ToList();
+        if (areteIncident.Count < 2)
+        {
+            return false;
+        }
+        var a1 = areteIncident[0];
+        var a2 = areteIncident[1];
+       
+        var sommetTriangle = a1.GetAllPoints();
+        sommetTriangle.AddRange(a2.GetAllPoints());
+        sommetTriangle = sommetTriangle.Distinct().ToList();
+        sommetTriangle = MeshCreator.Instance().getConvexEnvelopJarvis(sommetTriangle);
+        sommetTriangle = sommetTriangle.Distinct().ToList();
+        
+        
+        Triangle t = new Triangle(new Arete(sommetTriangle[0], sommetTriangle[1]),
+            new Arete(sommetTriangle[1], sommetTriangle[2]), new Arete(sommetTriangle[2], sommetTriangle[0]));
+
+        return temp.All(x => !IsInsideCircle(t, x));
 
     }
 
-    public bool CheckOutsideSupp(Vector3 s, List<Arete> La2, List<Vector3> sommets)
+    public bool CheckConvexPoint(Vector3 s, List<Arete> La2, Vector3 P)
     {
         var areteIncident = La2.Where(x => x.Contains(s)).ToList();
         if (areteIncident.Count < 2)
@@ -955,16 +992,20 @@ public class ProjectManager : MonoBehaviour
         }
         var a1 = areteIncident[0];
         var a2 = areteIncident[1];
+       
         var sommetTriangle = a1.GetAllPoints();
         sommetTriangle.AddRange(a2.GetAllPoints());
         sommetTriangle = sommetTriangle.Distinct().ToList();
         sommetTriangle = MeshCreator.Instance().getConvexEnvelopJarvis(sommetTriangle);
-
-        Triangle t = new Triangle(CreateLine(sommetTriangle[0], sommetTriangle[1]),
-            CreateLine(sommetTriangle[1], sommetTriangle[2]), CreateLine(sommetTriangle[2], sommetTriangle[0]));
-
-        return sommets.All(x => !IsInsideCircle(t, x));
-
+        sommetTriangle = sommetTriangle.Distinct().ToList();
+        
+        var temp = sommetTriangle.Where(x => !x.Equals(s)).OrderByDescending(x => x.y).ToList();
+        var angle = GetAngle(temp[0], s, temp[1]);
+        if (isLeft(temp[0], s, P))
+        {
+            angle = 360 - angle;
+        }
+        return angle < 180;
     }
 
     public List<Arete> AreteSeenBy(Vector3 P)
