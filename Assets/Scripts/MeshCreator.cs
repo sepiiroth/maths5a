@@ -122,8 +122,10 @@ public class MeshCreator : MonoBehaviour
         
         
 
-        GameObject go = (GameObject) Instantiate(poly, new Vector3(0,0,-0.5f), Quaternion.Euler(0, 0, 0));
+        GameObject go = (GameObject) Instantiate(poly, new Vector3(0, 0, 0f), Quaternion.Euler(0, 0, 0));
         go.GetComponent<MeshFilter>().mesh = mesh;
+        Color c = new Color(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f));
+        go.GetComponent<Renderer>().material.SetColor("_Color", c);
         return;
     }
 

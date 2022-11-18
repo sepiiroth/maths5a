@@ -175,21 +175,21 @@ public class ProjectManager : MonoBehaviour
                 Point milieu = new Point((arete[i].GetPointA()[0] + arete[i].GetPointB()[0])/2, (arete[i].GetPointA()[1] + arete[i].GetPointB()[1])/2, 0);
                 
                 if(triangle[index[0]].ContainsPoint(triangle[index[0]].centreCirconscrit.position)) { // Le point est dans le triangle
-                    Arete ar = new Arete(triangle[index[0]].centreCirconscrit.position, milieu.position); 
-                    Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointA() + (ar.GetPointB() - ar.GetPointA()) * 1000);
-                    arete[i].areteStar = arL;
+                    Arete ar = new Arete(triangle[index[0]].centreCirconscrit.position, triangle[index[0]].centreCirconscrit.position + (milieu.position - triangle[index[0]].centreCirconscrit.position) * 30); 
+                    Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointB());
+                    arete[i].areteStar = ar;
                     areteStar.Add(ar);
                 } else {
                     Vector3 vecDir = new Vector3(triangle[index[0]].centreCirconscrit.position[0] - milieu.position[0], triangle[index[0]].centreCirconscrit.position[1] - milieu.position[1], 0);
                     if(PolygonContainsPoint(triangle[index[0]].centreCirconscrit.position)) { // Le point est dans le polygone
-                        Arete ar = new Arete(triangle[index[0]].centreCirconscrit.position, milieu.position-vecDir); 
-                        Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointB() * 1000);
-                        arete[i].areteStar = arL;
+                        Arete ar = new Arete(triangle[index[0]].centreCirconscrit.position, (milieu.position-vecDir) * 30); 
+                        Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointB());
+                        arete[i].areteStar = ar;
                         areteStar.Add(ar);
                     } else { 
-                        Arete ar = new Arete(triangle[index[0]].centreCirconscrit.position, triangle[index[0]].centreCirconscrit.position+vecDir); 
-                        Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointB() * 1000);
-                        arete[i].areteStar = arL;
+                        Arete ar = new Arete(triangle[index[0]].centreCirconscrit.position, (triangle[index[0]].centreCirconscrit.position+vecDir) * 30); 
+                        Arete arL = CreateLineVoronoi(ar.GetPointA(), ar.GetPointB());
+                        arete[i].areteStar = ar;
                         areteStar.Add(ar);
                     }
                 }
@@ -206,13 +206,11 @@ public class ProjectManager : MonoBehaviour
                 }
             }
 
-            for(int l = 0; l < pointsRegionList.Count; l++) {
-                Debug.Log(pointsRegionList[l]);
-            }
+            
 
             MeshCreator.Instance().SetPoint(pointsRegionList.Distinct().ToList());
             MeshCreator.Instance().GenerateMesh();
-
+            
         }
     }
 
