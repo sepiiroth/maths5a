@@ -60,5 +60,10 @@ public class ClickOnPlan : MonoBehaviour
                 Destroy(temp);
             }
         }
+
+        if(Input.GetAxis("Mouse ScrollWheel") != 0f) {
+            GameObject lastPoint = ProjectManager.Instance().GetLastPoint();
+            lastPoint.transform.Translate(Vector3.forward * Input.GetAxis("Mouse ScrollWheel"));
+        }
     }
 }

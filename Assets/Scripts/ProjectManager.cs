@@ -1066,6 +1066,10 @@ public class ProjectManager : MonoBehaviour
         return centreCircleP;
     }
 
+    public GameObject GetLastPoint() {
+        return pointsList[pointsList.Count - 1];
+    }
+
 }
 
 
