@@ -8,7 +8,9 @@ public class ClickOnPlan : MonoBehaviour
     private Vector3 mousePosition;
 
     public GameObject prefabTemporaire; //A supprimer au bout d'un moment
-    
+
+
+    private GameObject tempObj;
     // Start is called before the first frame update
     void Start()
     {
@@ -33,10 +35,10 @@ public class ClickOnPlan : MonoBehaviour
             if (Physics.Raycast(mainCamera.transform.position, Vector3.forward, out hit, Mathf.Infinity, layerMaskBack))
             {
 
-                GameObject temp = (GameObject) Instantiate(prefabTemporaire, newV, Quaternion.Euler(0, 0, 0) );
-                temp.tag = "Point";
-                temp.layer = LayerMask.NameToLayer("Points");
-                ProjectManager.Instance().AddPointToList(temp);
+                tempObj = (GameObject) Instantiate(prefabTemporaire, newV, Quaternion.Euler(0, 0, 0) );
+                tempObj.tag = "Point";
+                tempObj.layer = LayerMask.NameToLayer("Points");
+                
             }
             
         }
@@ -61,9 +63,18 @@ public class ClickOnPlan : MonoBehaviour
             }
         }
 
-        if(Input.GetAxis("Mouse ScrollWheel") != 0f) {
-            GameObject lastPoint = ProjectManager.Instance().GetLastPoint();
-            lastPoint.transform.Translate(Vector3.forward * Input.GetAxis("Mouse ScrollWheel"));
+        if (Input.GetMouseButton(0))
+        {
+            if(Input.GetAxis("Mouse ScrollWheel") != 0f) {
+                GameObject lastPoint = tempObj;
+                lastPoint.transform.Translate(Vector3.forward * Input.GetAxis("Mouse ScrollWheel"));
+            }
         }
+
+        if (Input.GetMouseButtonUp(0))
+        {
+            ProjectManager.Instance().AddPointToList(tempObj);
+        }
+        
     }
 }
