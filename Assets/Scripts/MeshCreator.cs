@@ -209,7 +209,7 @@ public class MeshCreator : MonoBehaviour
     {
         var minAngle = 361f;
         Vector3 minPoint = Vector3.zero;
-        points.ForEach(x => Debug.Log(x));
+        //points.ForEach(x => Debug.Log(x));
         for (int i = 0; i < points.Count; i++)
         {
             if (points[i] != currentPoint && points[i] != lastPoint)

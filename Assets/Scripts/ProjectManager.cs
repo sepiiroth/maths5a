@@ -31,7 +31,16 @@ public class ProjectManager : MonoBehaviour
 
     [SerializeField]
     private GameObject centerCircle;
+    
+    [SerializeField]
+    private Material lineMatColorBlue;
+    
+    [SerializeField]
+    private Material lineMatColorPurple;
 
+    [SerializeField]
+    private Material lineMatColorRed;
+    
     GameObject point0;
 
     // Start is called before the first frame update
@@ -102,10 +111,7 @@ public class ProjectManager : MonoBehaviour
         
         if (Input.GetKeyDown(KeyCode.Q))
         {
-            for (int i = 0; i < 4; i++)
-            {
-                AjoutDelauney(Instantiate(centerCircle, new Vector3(-2 + i, -2 + i, 0), Quaternion.Euler(0,0,0)));
-            }
+            get3DConvexEnvelop(pointsList);
         }
 
         
@@ -118,15 +124,15 @@ public class ProjectManager : MonoBehaviour
 
     public void AddPointToList(GameObject point)
     {
-        //pointsList.Add(point);
-        AjoutDelauney(point);
+        pointsList.Add(point);
+        //AjoutDelauney(point);
         //IncrementalTriangulation();
         //Flipping();
     }
     
     public void RemovePointToList(GameObject point)
     {
-        RemoveDelauney(point);
+        //RemoveDelauney(point);
         //IncrementalTriangulation();
         //Flipping();
     }
@@ -1068,6 +1074,197 @@ public class ProjectManager : MonoBehaviour
 
     public GameObject GetLastPoint() {
         return pointsList[pointsList.Count - 1];
+    }
+
+    public void get3DConvexEnvelop(List<GameObject> points)
+    {
+
+        if (points.Count < 4)
+        {
+            return;
+        }
+
+        List<GameObject> Cq = points.Take(4).ToList();
+        List<GameObject> CQplus1 = new List<GameObject>();
+        List<GameObject> pointToCheck = points.Skip(4).ToList();
+
+        List<Triangle> TCq = new List<Triangle>();
+        List<Arete> ACq = new List<Arete>();
+
+        Triangle T1 = new Triangle(Cq[0].transform.position, Cq[1].transform.position, Cq[2].transform.position);
+        Triangle T2 = new Triangle(Cq[0].transform.position, Cq[2].transform.position, Cq[3].transform.position);
+        Triangle T3 = new Triangle(Cq[0].transform.position, Cq[1].transform.position, Cq[3].transform.position);
+        Triangle T4 = new Triangle(Cq[1].transform.position, Cq[2].transform.position, Cq[3].transform.position);
+        
+        TCq.Add(T1);
+        TCq.Add(T2);
+        TCq.Add(T3);
+        TCq.Add(T4);
+
+        foreach (var triangle in TCq)
+        {
+            triangle.GetAllArete().ForEach(x => ACq.Add(CreateLine(x.GetPointA(), x.GetPointB())));
+        }
+
+        ACq = ACq.Distinct().ToList();
+        int q = 4;
+
+
+        for (int i = 0; i < pointToCheck.Count; i++)
+        {
+            List<Triangle> faceBleu = new List<Triangle>();
+            List<Triangle> faceRouge = new List<Triangle>();
+
+            Debug.Log($"N° T = {TCq.Count}");
+            Debug.Log($"N° A = {ACq.Count}");
+            
+            for (int j = 0; j < TCq.Count; j++)
+            {
+                var triangle = TCq[j];
+                var x = Cq.Where(x => !triangle.GetSommet().Contains(x.transform.position)).First().transform.position;
+                var sommets = triangle.GetSommet();
+                
+                var Bp = sommets[1] - sommets[0];
+                var Cp = sommets[2] - sommets[0];
+                
+                //Coté de Cq par rapport a H
+                var Xp = x - sommets[0];
+        
+                /*
+                 * B.x | C.x | X.x
+                 * B.y | C.y | X.y
+                 * B.z | C.z | X.z
+                 * 
+                 */
+
+                var detCq = (Bp.x * Cp.y * Xp.z) + (Cp.x * Xp.y * Bp.z) + (Xp.x * Bp.y * Cp.z) - (Xp.x * Cp.y * Bp.z) - (Cp.x * Bp.y * Xp.z) -
+                          (Bp.x * Xp.y * Cp.z);
+        
+                
+                
+                //Coté du pi par rapport a H
+                x = pointToCheck[i].transform.position;
+                Xp = x - sommets[0];
+                
+                var detPi = (Bp.x * Cp.y * Xp.z) + (Cp.x * Xp.y * Bp.z) + (Xp.x * Bp.y * Cp.z) - (Xp.x * Cp.y * Bp.z) - (Cp.x * Bp.y * Xp.z) -
+                        (Bp.x * Xp.y * Cp.z);
+                
+                Debug.Log($"Cq = {detCq} - Cp = {detPi}");
+
+                if (detCq > 0  == detPi > 0)
+                {
+                    faceRouge.Add(triangle);
+                }
+                else
+                {
+                    faceBleu.Add(triangle);
+                }
+            }
+
+            if (faceBleu.Count == 0)
+            {
+                CQplus1 = Cq;
+            }
+            else
+            {
+                List<Arete> aretesRouges = new List<Arete>();
+                List<Arete> aretesBleues = new List<Arete>();
+                List<Arete> aretesViolettes = new List<Arete>();
+                List<Vector3> sommetsRouges = new List<Vector3>();
+                List<Vector3> sommesBleus = new List<Vector3>();
+                List<Vector3> sommetsViolets = new List<Vector3>();
+
+                foreach (var a in ACq)
+                {
+                    if (faceRouge.Where(x => x.ContainsArete(a)).ToList().Count == 2)
+                    {
+                        aretesRouges.Add(a);
+                        //a.GetLine().GetComponent<LineRenderer>().material = lineMatColorRed;
+                    }else if (faceBleu.Where(x => x.ContainsArete(a)).ToList().Count == 2)
+                    {
+                        aretesBleues.Add(a);
+                        //a.GetLine().GetComponent<LineRenderer>().material = lineMatColorBlue;
+                    }
+                    else
+                    {
+                        aretesViolettes.Add(a);
+                        //a.GetLine().GetComponent<LineRenderer>().material = lineMatColorPurple;
+                    }
+                }
+
+
+                foreach (var a in aretesBleues)
+                {
+                    sommesBleus.AddRange(a.GetAllPoints());
+                }
+                
+                foreach (var a in aretesRouges)
+                {
+                    sommetsRouges.AddRange(a.GetAllPoints());
+                }
+                
+                foreach (var a in aretesViolettes)
+                {
+                    sommetsViolets.AddRange(a.GetAllPoints());
+                }
+
+                TCq = TCq.Where(x => faceRouge.Contains(x)).ToList();
+                CQplus1 = new List<GameObject>();
+                ACq = new List<Arete>();
+                CQplus1.AddRange(points.Where(x => sommetsRouges.Contains(x.transform.position) || sommetsViolets.Contains(x.transform.position)).ToList());
+                CQplus1 = CQplus1.Distinct().ToList();
+                CQplus1.Add(pointToCheck[i]);
+
+                foreach (var a in aretesViolettes)
+                {
+                    Arete a1 = CreateLine(a.GetPointA(), pointToCheck[i].transform.position);
+                    Arete a2 = CreateLine(a.GetPointB(), pointToCheck[i].transform.position);
+                    ACq.Add(a1);
+                    ACq.Add(a2);
+                    ACq.Add(a);
+                    
+                    Triangle temp = new Triangle(a, a1, a2);
+                    TCq.Add(temp);
+                }
+                
+                foreach (var a in aretesRouges)
+                {
+                    ACq.Add(a);
+                }
+
+                ACq = ACq.Distinct().ToList();
+                
+                
+            }
+
+            Cq = CQplus1;
+            
+
+        }
+
+
+        foreach (var a in ACq)
+        {
+            a.GetLine().GetComponent<LineRenderer>().material = lineMatColorPurple;
+        }
+        
+        
+
+    }
+
+    public Vector3 get3DTriangleCenter(Triangle t)
+    {
+        List<Vector3> temp = t.GetSommet();
+
+        var a = temp[0];
+        var b = temp[1];
+        var c = temp[2];
+
+        var x = (a.x + b.x + c.x) / 3;
+        var y = (a.y + b.y + c.y) / 3;
+        var z = (a.z + b.z + c.z) / 3;
+
+        return new Vector3(x, y, z);
     }
 
 }
