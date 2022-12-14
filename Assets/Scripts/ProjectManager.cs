@@ -1345,27 +1345,9 @@ public class ProjectManager : MonoBehaviour
         }*/
 
         Tetraèdre insider = GetTetraContainingPoint(P.transform.position);
-
-        //List<Arete> L = new List<Arete>();
         
         if (insider != null)
         {
-            /*foreach (var t in insider.GetFaces())
-            {
-                List<Vector3> tetra = new List<Vector3>();
-                insider.GetFaces().ForEach(x => tetra.AddRange(x.GetSommet()));
-                tetra = tetra.Distinct().ToList();
-                if (!CheckSideOfAPlan(tetra, t, P.transform.position))
-                {
-                    List<Arete> arete = t.GetAllArete().ToList();
-
-                    L.AddRange(arete);
-            
-                    T.Remove(t);
-                }
-                
-            }*/
-            
             List<Vector3> tetra = new List<Vector3>();
             insider.GetFaces().ForEach(x => tetra.AddRange(x.GetSommet()));
             tetra = tetra.Distinct().ToList();
@@ -1389,63 +1371,51 @@ public class ProjectManager : MonoBehaviour
         insider = GetSphereTetraContainingPoint(P.transform.position);
         if (insider != null)
         {
-            Triangle faceToPoint = null;
+            Debug.Log("Intérieur de la sphère");
+            /*Triangle faceToPoint = null;
+            List<Vector3> tetra = new List<Vector3>();
+            insider.GetFaces().ForEach(x => tetra.AddRange(x.GetSommet()));
+            tetra = tetra.Distinct().ToList();
             foreach (var t in insider.GetFaces())
             {
-                List<Vector3> tetra = new List<Vector3>();
-                insider.GetFaces().ForEach(x => tetra.AddRange(x.GetSommet()));
-                tetra = tetra.Distinct().ToList();
                 if (!CheckSideOfAPlan(tetra, t, P.transform.position))
                 {
                     faceToPoint = t;
                     break;
                 }
             }
-            
-            
+
+            T.Remove(faceToPoint);
+            var otherSommet = tetra.Where(x => !faceToPoint.GetSommet().Contains(x)).First();
+
+            Arete abase = CreateLine(otherSommet, P.transform.position);
+
+            foreach (var s in faceToPoint.GetSommet())
+            {
+                Arete a1 = CreateLine(otherSommet, s);
+                Arete a2 = CreateLine(P.transform.position, s);
+
+                Triangle t = new Triangle(abase, a1, a2);
+                T.Add(t);
+            }*/
+            pointsList.Add(P);
+
         }
         else
         {
-            List<Vector3> sommetsInsiderAndP = new List<Vector3>();
-            insider.GetFaces().ForEach(x => sommetsInsiderAndP.AddRange(x.GetSommet()));
-            sommetsInsiderAndP = sommetsInsiderAndP.Distinct().ToList();
-            sommetsInsiderAndP.Add(P.transform.position);
-            List<Triangle> envCon = get3DConvexEnvelop(sommetsInsiderAndP);
+            Debug.Log("Exterieur de la sphere ");
+            pointsList.Add(P);
+            List<Triangle> envCon = get3DConvexEnvelop(pointsList.Select(x => x.transform.position).ToList());
 
             foreach (var t in envCon)
             {
-                t.GetAllArete().ForEach(x => CreateLine(x.GetPointA(), x.GetPointB()));
-                T.Add(t);
+                if (!T.Contains(t))
+                {
+                    t.GetAllArete().ForEach(x => CreateLine(x.GetPointA(), x.GetPointB()));
+                    T.Add(t);
+                }
             }
         }
-        
-        /*while (L.Count > 0)
-        {
-            Arete a = L[0];
-            if (IsInsideCircle(a,P.transform.position))
-            {
-                List<Triangle> list = GetTriangleFromArete(a);
-                for (int i = 0; i < list.Count; i++)
-                {
-                    var sommetT = list[i].GetAllArete();
-                    sommetT.Remove(a);
-                    L.AddRange(sommetT);
-                    Destroy(a.GetLine());
-                    A.Remove(a);
-                    T.Remove(list[i]);
-                }
-                
-            }
-            else
-            {
-                Arete areteA = CreateLine(a.GetPointA(), P.transform.position);
-                Arete areteB = CreateLine(a.GetPointB(), P.transform.position);
-                Triangle t = new Triangle(areteA, areteB, a);
-                T.Add(t);
-            }
-            L.Remove(a);
-        }*/
-        pointsList.Add(P);
 
     }
     
