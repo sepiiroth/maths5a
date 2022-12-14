@@ -5,10 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7aeb0363-3fe7-41a1-9e3a-2dcb8048a2b5" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Geometry/Tetraèdre.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Geometry/Tetraèdre.cs.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.maths5a/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.maths5a/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/MeshCreator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/MeshCreator.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scripts/ProjectManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/ProjectManager.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UserSettings/Layouts/default-2021.dwlt" beforeDir="false" afterPath="$PROJECT_DIR$/UserSettings/Layouts/default-2021.dwlt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -87,6 +88,8 @@
       <workItem from="1667932661685" duration="9478000" />
       <workItem from="1668085336373" duration="10697000" />
       <workItem from="1670261221186" duration="18794000" />
+      <workItem from="1670842497248" duration="384000" />
+      <workItem from="1670923555703" duration="19767000" />
     </task>
     <servers />
   </component>

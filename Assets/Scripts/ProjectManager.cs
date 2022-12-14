@@ -17,6 +17,7 @@ public class ProjectManager : MonoBehaviour
     private List<GameObject> pointsList;
     private List<Arete> A;
     private List<Triangle> T;
+    private List<Tetraèdre> F;
     private List<Point> centreCircleList = new List<Point>();
     private List<Arete> areteStar = new List<Arete>();
 
@@ -50,6 +51,7 @@ public class ProjectManager : MonoBehaviour
         pointsList = new List<GameObject>();
         A = new List<Arete>();
         T = new List<Triangle>();
+        F = new List<Tetraèdre>();
     }
 
     // Update is called once per frame
@@ -64,18 +66,6 @@ public class ProjectManager : MonoBehaviour
             {
                 CreateLine(temp[i].transform.position, temp[(i + 1) % temp.Count].transform.position);
             }
-            /*
-            var newLine = Instantiate(linePrefab, Vector3.zero, Quaternion.Euler(0, 0, 0));
-            LineRenderer lR = newLine.GetComponent<LineRenderer>();
-            lR.positionCount = temp.Count;
-            int index = 0;
-            foreach (var x in temp)
-            {
-               
-                lR.SetPosition(index, x.transform.position + new Vector3(0,0,-0.1f)) ;
-                Debug.Log(x.transform.position);
-                index++;
-            }*/
         }
 
         if(Input.GetKeyDown(KeyCode.G)) {
@@ -111,7 +101,11 @@ public class ProjectManager : MonoBehaviour
         
         if (Input.GetKeyDown(KeyCode.Q))
         {
-            get3DConvexEnvelop(pointsList);
+            List<Triangle> ACq = get3DConvexEnvelop(pointsList.Select(x => x.transform.position).ToList());
+            foreach (var t in ACq)
+            {
+                t.GetAllArete().ForEach(a => a.GetLine().GetComponent<LineRenderer>().material = lineMatColorPurple);
+            }
         }
 
         
@@ -124,8 +118,9 @@ public class ProjectManager : MonoBehaviour
 
     public void AddPointToList(GameObject point)
     {
-        pointsList.Add(point);
+        //pointsList.Add(point);
         //AjoutDelauney(point);
+        AjoutDelauney3D(point);
         //IncrementalTriangulation();
         //Flipping();
     }
@@ -1076,25 +1071,25 @@ public class ProjectManager : MonoBehaviour
         return pointsList[pointsList.Count - 1];
     }
 
-    public void get3DConvexEnvelop(List<GameObject> points)
+    public List<Triangle> get3DConvexEnvelop(List<Vector3> points)
     {
 
         if (points.Count < 4)
         {
-            return;
+            return null;
         }
 
-        List<GameObject> Cq = points.Take(4).ToList();
-        List<GameObject> CQplus1 = new List<GameObject>();
-        List<GameObject> pointToCheck = points.Skip(4).ToList();
+        List<Vector3> Cq = points.Take(4).ToList();
+        List<Vector3> CQplus1 = new List<Vector3>();
+        List<Vector3> pointToCheck = points.Skip(4).ToList();
 
         List<Triangle> TCq = new List<Triangle>();
         List<Arete> ACq = new List<Arete>();
 
-        Triangle T1 = new Triangle(Cq[0].transform.position, Cq[1].transform.position, Cq[2].transform.position);
-        Triangle T2 = new Triangle(Cq[0].transform.position, Cq[2].transform.position, Cq[3].transform.position);
-        Triangle T3 = new Triangle(Cq[0].transform.position, Cq[1].transform.position, Cq[3].transform.position);
-        Triangle T4 = new Triangle(Cq[1].transform.position, Cq[2].transform.position, Cq[3].transform.position);
+        Triangle T1 = new Triangle(Cq[0], Cq[1], Cq[2]);
+        Triangle T2 = new Triangle(Cq[0], Cq[2], Cq[3]);
+        Triangle T3 = new Triangle(Cq[0], Cq[1], Cq[3]);
+        Triangle T4 = new Triangle(Cq[1], Cq[2], Cq[3]);
         
         TCq.Add(T1);
         TCq.Add(T2);
@@ -1103,7 +1098,7 @@ public class ProjectManager : MonoBehaviour
 
         foreach (var triangle in TCq)
         {
-            triangle.GetAllArete().ForEach(x => ACq.Add(CreateLine(x.GetPointA(), x.GetPointB())));
+            triangle.GetAllArete().ForEach(x => ACq.Add(new Arete(x.GetPointA(), x.GetPointB())));
         }
 
         ACq = ACq.Distinct().ToList();
@@ -1121,37 +1116,8 @@ public class ProjectManager : MonoBehaviour
             for (int j = 0; j < TCq.Count; j++)
             {
                 var triangle = TCq[j];
-                var x = Cq.Where(x => !triangle.GetSommet().Contains(x.transform.position)).First().transform.position;
-                var sommets = triangle.GetSommet();
-                
-                var Bp = sommets[1] - sommets[0];
-                var Cp = sommets[2] - sommets[0];
-                
-                //Coté de Cq par rapport a H
-                var Xp = x - sommets[0];
-        
-                /*
-                 * B.x | C.x | X.x
-                 * B.y | C.y | X.y
-                 * B.z | C.z | X.z
-                 * 
-                 */
 
-                var detCq = (Bp.x * Cp.y * Xp.z) + (Cp.x * Xp.y * Bp.z) + (Xp.x * Bp.y * Cp.z) - (Xp.x * Cp.y * Bp.z) - (Cp.x * Bp.y * Xp.z) -
-                          (Bp.x * Xp.y * Cp.z);
-        
-                
-                
-                //Coté du pi par rapport a H
-                x = pointToCheck[i].transform.position;
-                Xp = x - sommets[0];
-                
-                var detPi = (Bp.x * Cp.y * Xp.z) + (Cp.x * Xp.y * Bp.z) + (Xp.x * Bp.y * Cp.z) - (Xp.x * Cp.y * Bp.z) - (Cp.x * Bp.y * Xp.z) -
-                        (Bp.x * Xp.y * Cp.z);
-                
-                Debug.Log($"Cq = {detCq} - Cp = {detPi}");
-
-                if (detCq > 0  == detPi > 0)
+                if (CheckSideOfAPlan(Cq, triangle, pointToCheck[i]))
                 {
                     faceRouge.Add(triangle);
                 }
@@ -1209,16 +1175,16 @@ public class ProjectManager : MonoBehaviour
                 }
 
                 TCq = TCq.Where(x => faceRouge.Contains(x)).ToList();
-                CQplus1 = new List<GameObject>();
+                CQplus1 = new List<Vector3>();
                 ACq = new List<Arete>();
-                CQplus1.AddRange(points.Where(x => sommetsRouges.Contains(x.transform.position) || sommetsViolets.Contains(x.transform.position)).ToList());
+                CQplus1.AddRange(points.Where(x => sommetsRouges.Contains(x) || sommetsViolets.Contains(x)).ToList());
                 CQplus1 = CQplus1.Distinct().ToList();
                 CQplus1.Add(pointToCheck[i]);
 
                 foreach (var a in aretesViolettes)
                 {
-                    Arete a1 = CreateLine(a.GetPointA(), pointToCheck[i].transform.position);
-                    Arete a2 = CreateLine(a.GetPointB(), pointToCheck[i].transform.position);
+                    Arete a1 = new Arete(a.GetPointA(), pointToCheck[i]);
+                    Arete a2 = new Arete(a.GetPointB(), pointToCheck[i]);
                     ACq.Add(a1);
                     ACq.Add(a2);
                     ACq.Add(a);
@@ -1243,13 +1209,45 @@ public class ProjectManager : MonoBehaviour
         }
 
 
-        foreach (var a in ACq)
+        /*foreach (var a in ACq)
         {
             a.GetLine().GetComponent<LineRenderer>().material = lineMatColorPurple;
-        }
+        }*/
         
-        
+        return TCq;
+    }
 
+    public bool CheckSideOfAPlan(List<Vector3> Cq, Triangle triangle, Vector3 P)
+    {
+        var x = Cq.Where(x => !triangle.GetSommet().Contains(x)).First();
+        var sommets = triangle.GetSommet();
+                
+        var Bp = sommets[1] - sommets[0];
+        var Cp = sommets[2] - sommets[0];
+                
+        //Coté de Cq par rapport a H
+        var Xp = x - sommets[0];
+        
+        /*
+         * B.x | C.x | X.x
+         * B.y | C.y | X.y
+         * B.z | C.z | X.z
+         * 
+         */
+
+        var detCq = (Bp.x * Cp.y * Xp.z) + (Cp.x * Xp.y * Bp.z) + (Xp.x * Bp.y * Cp.z) - (Xp.x * Cp.y * Bp.z) - (Cp.x * Bp.y * Xp.z) -
+                    (Bp.x * Xp.y * Cp.z);
+        
+                
+                
+        //Coté du pi par rapport a H
+        x = P;
+        Xp = x - sommets[0];
+                
+        var detPi = (Bp.x * Cp.y * Xp.z) + (Cp.x * Xp.y * Bp.z) + (Xp.x * Bp.y * Cp.z) - (Xp.x * Cp.y * Bp.z) - (Cp.x * Bp.y * Xp.z) -
+                    (Bp.x * Xp.y * Cp.z);
+
+        return detCq > 0 == detPi > 0;
     }
 
     public Vector3 get3DTriangleCenter(Triangle t)
@@ -1265,6 +1263,232 @@ public class ProjectManager : MonoBehaviour
         var z = (a.z + b.z + c.z) / 3;
 
         return new Vector3(x, y, z);
+    }
+    
+    public void AjoutDelauney3D(GameObject P)
+    {
+        if (pointsList.Count == 0)
+        {
+            pointsList.Add(P);
+            return;
+        }
+        
+        List<GameObject> pointSorted = pointsList.OrderBy(x => x.transform.position.x).ToList();
+        List<GameObject> polygon = new List<GameObject>();
+
+        if (pointsList.Count == 1 )
+        {
+            CreateLine(pointSorted[0].transform.position, P.transform.position);
+        
+            pointsList.Add(P);
+            polygon.Add(pointSorted[0]);
+            polygon.Add(P);
+            pointSorted.RemoveAt(0);
+            return;
+        }
+        Vector3 v = pointSorted[0].transform.position - pointSorted[1].transform.position;
+        Vector3 u = pointSorted[1].transform.position - P.transform.position;
+        if (isColinear(v,u))
+        {
+            GameObject nearest = pointSorted.OrderBy(x => Vector3.Distance(x.transform.position, P.transform.position))
+                .First();
+            CreateLine(nearest.transform.position, P.transform.position);
+            pointsList.Add(P);
+            return;
+        }
+
+        if (pointsList.Count == 2)
+        {
+            Arete a = CreateLine(pointSorted[0].transform.position, P.transform.position);
+            Arete b = CreateLine(pointSorted[1].transform.position, P.transform.position);
+            Arete c = CreateLine(pointSorted[0].transform.position, pointSorted[1].transform.position);
+
+            Triangle t = new Triangle(a, b, c);
+            pointsList.Add(P);
+            T.Add(t);
+            return;
+        }
+
+        if (pointsList.Count == 3)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                Triangle t = new Triangle(pointSorted[i].transform.position,
+                    pointSorted[(i + 1) % 3].transform.position, P.transform.position);
+                T.Add(t);
+                
+                foreach (var a in t.GetAllArete())
+                {
+                    CreateLine(a.GetPointA(), a.GetPointB());
+                }
+            }
+            pointsList.Add(P);
+            F.Add(new Tetraèdre(T[0], T[1], T[2], T[3]));
+            return;
+        }
+        
+        /*List<GameObject> envelop = new List<GameObject>();
+
+        if (T.Count == 0)
+        {
+            for (int i = 0; i < pointSorted.Count-1; i++)
+            {
+                Arete areteA = CreateLine(pointSorted[i].transform.position, P.transform.position);
+                Arete areteB = CreateLine(pointSorted[(i+1)].transform.position, P.transform.position);
+                Arete areteC = CreateLine(pointSorted[i].transform.position,
+                    pointSorted[(i + 1)].transform.position);
+                Triangle t = new Triangle(areteA, areteB, areteC);
+                T.Add(t);
+            }
+            pointsList.Add(P);
+            return;
+        }*/
+
+        Tetraèdre insider = GetTetraContainingPoint(P.transform.position);
+
+        //List<Arete> L = new List<Arete>();
+        
+        if (insider != null)
+        {
+            /*foreach (var t in insider.GetFaces())
+            {
+                List<Vector3> tetra = new List<Vector3>();
+                insider.GetFaces().ForEach(x => tetra.AddRange(x.GetSommet()));
+                tetra = tetra.Distinct().ToList();
+                if (!CheckSideOfAPlan(tetra, t, P.transform.position))
+                {
+                    List<Arete> arete = t.GetAllArete().ToList();
+
+                    L.AddRange(arete);
+            
+                    T.Remove(t);
+                }
+                
+            }*/
+            
+            List<Vector3> tetra = new List<Vector3>();
+            insider.GetFaces().ForEach(x => tetra.AddRange(x.GetSommet()));
+            tetra = tetra.Distinct().ToList();
+
+            foreach (var t in insider.GetFaces())
+            {
+                foreach (var a in t.GetAllArete())
+                {
+                    Arete a1 = CreateLine(a.GetPointA(), P.transform.position);
+                    Arete a2 = CreateLine(a.GetPointB(), P.transform.position);
+
+                    Triangle temp = new Triangle(a, a1, a2);
+                    T.Add(temp);
+                }
+            }
+            pointsList.Add(P);
+            return;
+            
+        }
+
+        insider = GetSphereTetraContainingPoint(P.transform.position);
+        if (insider != null)
+        {
+            Triangle faceToPoint = null;
+            foreach (var t in insider.GetFaces())
+            {
+                List<Vector3> tetra = new List<Vector3>();
+                insider.GetFaces().ForEach(x => tetra.AddRange(x.GetSommet()));
+                tetra = tetra.Distinct().ToList();
+                if (!CheckSideOfAPlan(tetra, t, P.transform.position))
+                {
+                    faceToPoint = t;
+                    break;
+                }
+            }
+            
+            
+        }
+        else
+        {
+            List<Vector3> sommetsInsiderAndP = new List<Vector3>();
+            insider.GetFaces().ForEach(x => sommetsInsiderAndP.AddRange(x.GetSommet()));
+            sommetsInsiderAndP = sommetsInsiderAndP.Distinct().ToList();
+            sommetsInsiderAndP.Add(P.transform.position);
+            List<Triangle> envCon = get3DConvexEnvelop(sommetsInsiderAndP);
+
+            foreach (var t in envCon)
+            {
+                t.GetAllArete().ForEach(x => CreateLine(x.GetPointA(), x.GetPointB()));
+                T.Add(t);
+            }
+        }
+        
+        /*while (L.Count > 0)
+        {
+            Arete a = L[0];
+            if (IsInsideCircle(a,P.transform.position))
+            {
+                List<Triangle> list = GetTriangleFromArete(a);
+                for (int i = 0; i < list.Count; i++)
+                {
+                    var sommetT = list[i].GetAllArete();
+                    sommetT.Remove(a);
+                    L.AddRange(sommetT);
+                    Destroy(a.GetLine());
+                    A.Remove(a);
+                    T.Remove(list[i]);
+                }
+                
+            }
+            else
+            {
+                Arete areteA = CreateLine(a.GetPointA(), P.transform.position);
+                Arete areteB = CreateLine(a.GetPointB(), P.transform.position);
+                Triangle t = new Triangle(areteA, areteB, a);
+                T.Add(t);
+            }
+            L.Remove(a);
+        }*/
+        pointsList.Add(P);
+
+    }
+    
+    public Tetraèdre GetSphereTetraContainingPoint(Vector3 P)
+    {
+        foreach (var currentF in F)
+        {
+            //Instantiate(centerCircle, currentF.GetSphereCenter(), Quaternion.Euler(0, 0, 0));
+            //Debug.Log(currentF.GetSphereCenter());
+            if (currentF.ContainsPoint(P))
+            {
+                return currentF;
+            }
+        }
+        
+        return null;
+    }
+
+    public Tetraèdre GetTetraContainingPoint(Vector3 P)
+    {
+        foreach (var currentF in F)
+        {
+            //Instantiate(centerCircle, currentF.GetSphereCenter(), Quaternion.Euler(0, 0, 0));
+            //Debug.Log(currentF.GetSphereCenter());
+            bool isInside = true;
+            foreach (var t in currentF.GetFaces())
+            {
+                List<Vector3> tetra = new List<Vector3>();
+                currentF.GetFaces().ForEach(x => tetra.AddRange(x.GetSommet()));
+                tetra = tetra.Distinct().ToList();
+                if (!CheckSideOfAPlan(tetra, t, P))
+                {
+                    isInside = false;
+                    break;
+                }
+            }
+            if (isInside)
+            {
+                return currentF;
+            }
+        }
+        
+        return null;
     }
 
 }
